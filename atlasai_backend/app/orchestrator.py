@@ -11,9 +11,6 @@ from typing import Dict, List
 
 from app.agents import (
     KnowledgeAgent,
-    MaintenanceAgent,
-    ComplianceAgent,
-    LessonsLearnedAgent,
     KnowledgeCaptureAgent,
 )
 from app.models.schemas import OrchestratorRequest, OrchestratorResponse, AgentResult
@@ -24,40 +21,23 @@ class Orchestrator:
     def __init__(self):
         self.agents = {
             "knowledge_agent": KnowledgeAgent(),
-            "maintenance_agent": MaintenanceAgent(),
-            "compliance_agent": ComplianceAgent(),
-            "lessons_learned_agent": LessonsLearnedAgent(),
             "knowledge_capture_agent": KnowledgeCaptureAgent(),
         }
 
     def _route(self, request: OrchestratorRequest) -> List[str]:
         """Decide which agent(s) should handle this request.
 
-        knowledge_agent is additive, not a last-resort fallback: it's
-        the only agent that LLM-synthesizes a real answer (the others
-        are retrieval-only by design — see maintenance_agent's
-        docstring). A query like "what fixed the vibration issue"
-        matches maintenance_agent's keywords ("vibrat") AND wants a
-        synthesized answer, not just the raw top-matching chunk — so it
-        needs both. Previously knowledge_agent only ran when nothing
-        else matched, meaning any maintenance/compliance/incident
-        keyword silently skipped synthesis entirely.
-
-        knowledge_capture_agent is the one exception: an actual capture/
-        interview request wants that flow specifically, not a synthesized
-        answer about something.
+        knowledge_agent is the default: it's the only agent that
+        LLM-synthesizes a real answer, grounded in retrieved HTE
+        documents. knowledge_capture_agent is the one exception — an
+        actual capture/interview request wants that flow specifically,
+        not a synthesized answer about something.
         """
         if request.agents:
             return request.agents
 
         q = request.query.lower()
         selected = []
-        if any(w in q for w in ["fail", "vibrat", "breakdown", "root cause", "rca"]):
-            selected.append("maintenance_agent")
-        if any(w in q for w in ["compliance", "audit", "regulation", "oisd"]):
-            selected.append("compliance_agent")
-        if any(w in q for w in ["incident", "near miss", "similar"]):
-            selected.append("lessons_learned_agent")
         if any(w in q for w in ["capture", "interview", "record my experience"]):
             selected.append("knowledge_capture_agent")
 
@@ -108,12 +88,7 @@ class Orchestrator:
 
         if results:
             # Prefer knowledge_agent's answer for merged_answer — it's
-            # the synthesized, citation-grounded one. Specialist agents
-            # (maintenance/compliance/lessons_learned) still run and
-            # their results are available in `results` for sources/
-            # context, but their raw retrieval dumps shouldn't be what
-            # the user reads as "the answer" when a synthesized one
-            # exists alongside it.
+            # the synthesized, citation-grounded one.
             knowledge_result = next((r for r in results if r.agent == "knowledge_agent"), None)
             if knowledge_result:
                 merged_answer = knowledge_result.answer
