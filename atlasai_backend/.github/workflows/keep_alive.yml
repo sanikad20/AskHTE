@@ -1,0 +1,17 @@
+name: Keep AtlasAI Backend Alive
+
+on:
+  schedule:
+    # Every 10 minutes
+    - cron: "*/10 * * * *"
+
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Render Backend
+        run: |
+          curl -L https://ethack-genai.onrender.com/

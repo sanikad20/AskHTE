@@ -1,0 +1,22 @@
+# Flutter
+**/build/
+**/.dart_tool/
+**/android/.gradle/
+**/ios/Pods/
+**/ios/.symlinks/
+*.g.dart
+
+# Firebase
+**/firebase_options.dart
+**/.firebase/
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.env
+
+# General
+.DS_Store
+*.log
