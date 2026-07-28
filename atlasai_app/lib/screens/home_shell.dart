@@ -10,12 +10,13 @@ import 'technician/technician_home.dart';
 /// apply to an HTE circular Q&A tool, so this always shows
 /// TechnicianHome (the chat screen) instead of branching.
 ///
-/// The role-based screens/services (engineer_home.dart, manager_home.dart,
-/// auditor_home.dart, role_controller.dart, role_switcher.dart) are still
-/// in the codebase but no longer reachable from normal app navigation —
-/// left in place rather than deleted so nothing else that imports them
-/// (e.g. auth_gate.dart's RoleScope wrapper) breaks. If you want them
-/// fully gone, that's a follow-up cleanup, not required for the PS3 demo.
+/// CLEANUP: the role-based screens/services (engineer_home.dart,
+/// manager_home.dart, auditor_home.dart, equipment_timeline_screen.dart,
+/// action_result_screen.dart, action_engine_service.dart,
+/// dashboard_service.dart, role_controller.dart, role_switcher.dart,
+/// role_badge.dart) have been removed — they were unreachable from any
+/// real navigation path and specific to the industrial domain this was
+/// forked from. auth_gate.dart no longer creates a RoleScope either.
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key});
 

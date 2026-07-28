@@ -23,7 +23,7 @@ class StorageService {
   final String backendBaseUrl;
 
   StorageService({
-    this.backendBaseUrl = 'http://192.168.29.99:8000',
+    this.backendBaseUrl = 'https://ethack-genai.onrender.com',
   });
 
   
