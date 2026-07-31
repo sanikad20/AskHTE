@@ -8,7 +8,14 @@ _CONFIDENCE_DEBUG = True
 
 
 def _distance_to_confidence(distance: float) -> float:
-    cos_sim = 1 - distance / 2
+    # Chroma's "cosine" space (see chroma_client.py — now set explicitly
+    # instead of relying on the unstated "l2" default) returns
+    # distance = 1 - cos_sim, range [0, 2]. So cos_sim = 1 - distance,
+    # NOT 1 - distance/2 (that formula was only coincidentally correct
+    # under the old, implicit "l2" default + normalized embeddings —
+    # see CHANGES_V7.md for the derivation). If you ever change the
+    # collection's hnsw:space again, this line needs to change with it.
+    cos_sim = 1 - distance
     return max(0.0, min(1.0, cos_sim))
 
 
@@ -22,8 +29,8 @@ def _distance_to_confidence(distance: float) -> float:
 # see confidence still looking off after testing a few real questions,
 # adjust the two numbers directly below and re-run; the debug print two
 # lines down shows you the raw number to tune against.
-_LOW_ANCHOR = 0.15   # raw cos_sim treated as ~0% confidence
-_HIGH_ANCHOR = 0.45  # raw cos_sim treated as ~100% confidence
+_LOW_ANCHOR = 0.10   # raw cos_sim treated as ~0% confidence
+_HIGH_ANCHOR = 0.40  # raw cos_sim treated as ~100% confidence
 
 
 def _rescale_confidence(raw: float) -> float:
@@ -111,11 +118,19 @@ async def retrieve(
     # average drags a good answer's confidence down to look like a bad
     # one. Weighting the best score more heavily is more representative
     # of "how good was the evidence this answer is actually grounded
-    # in" than "how good was the average of everything retrieved".
+    # in" than "how good was everything retrieved on average".
+    #
+    # Also added: an agreement term. Three consistently strong matches
+    # (0.42, 0.41, 0.40) is a better signal than one strong match
+    # surrounded by two irrelevant ones (0.42, 0.15, 0.12), even though
+    # `best` is identical in both cases — agreement captures that
+    # difference, `best` alone can't.
     if scores:
         best = scores[0]
-        avg_top3 = sum(scores[:3]) / min(len(scores), 3)
-        raw_confidence = 0.7 * best + 0.3 * avg_top3
+        top3 = scores[:3]
+        avg_top3 = sum(top3) / min(len(top3), 3)
+        agreement = max(0.0, 1 - (max(top3) - min(top3)))
+        raw_confidence = 0.7 * best + 0.2 * avg_top3 + 0.1 * agreement
     else:
         raw_confidence = 0.0
     confidence = _rescale_confidence(raw_confidence)
@@ -126,7 +141,8 @@ async def retrieve(
     # no-match questions still show above ~30%, raise _LOW_ANCHOR above.
     # Set _CONFIDENCE_DEBUG = False below once you're happy with it.
     if _CONFIDENCE_DEBUG:
-        print(f"[confidence debug] raw_scores={scores} raw_confidence={raw_confidence:.3f} "
+        space = collection.metadata.get("hnsw:space") if collection.metadata else "l2 (Chroma default — no space set)"
+        print(f"[confidence debug] space={space} raw_scores={scores} raw_confidence={raw_confidence:.3f} "
               f"-> rescaled={confidence:.3f} (anchors {_LOW_ANCHOR}-{_HIGH_ANCHOR})")
 
     return {
