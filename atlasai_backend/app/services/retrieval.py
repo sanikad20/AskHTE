@@ -1,8 +1,10 @@
 from typing import Any, Dict, Optional
-import os
 
 from app.services import embeddings, ingestion
 from app.services.chroma_client import get_documents_collection
+
+# Set to False once you're happy with the confidence numbers.
+_CONFIDENCE_DEBUG = True
 
 
 def _distance_to_confidence(distance: float) -> float:
@@ -13,18 +15,15 @@ def _distance_to_confidence(distance: float) -> float:
 # Raw cosine similarity from this embedder (a MiniLM-class bi-encoder)
 # rarely exceeds ~0.5-0.6 even for a genuinely correct, well-grounded
 # match — averaging it directly and showing it as a percentage reads as
-# "low confidence" for answers that are actually right. This is exactly
-# what showed up in testing: correct, well-cited VALVE-12 answers
-# scoring 37-39%.
+# "low confidence" for answers that are actually right.
 #
 # Rescale the raw average into a more representative 0-100% range using
-# two tunable anchors instead of exposing the raw number directly.
-# Tune via .env if this embedding model's typical range differs on your
-# corpus — same pattern as CONFIDENCE_TEMPERATURE in knowledge_agent.py:
-#   CONFIDENCE_LOW_ANCHOR  — raw cos_sim treated as ~0% confidence
-#   CONFIDENCE_HIGH_ANCHOR — raw cos_sim treated as ~100% confidence
-_LOW_ANCHOR = float(os.getenv("CONFIDENCE_LOW_ANCHOR", "0.15"))
-_HIGH_ANCHOR = float(os.getenv("CONFIDENCE_HIGH_ANCHOR", "0.55"))
+# two anchors. These are hardcoded rather than pulled from .env — if you
+# see confidence still looking off after testing a few real questions,
+# adjust the two numbers directly below and re-run; the debug print two
+# lines down shows you the raw number to tune against.
+_LOW_ANCHOR = 0.15   # raw cos_sim treated as ~0% confidence
+_HIGH_ANCHOR = 0.45  # raw cos_sim treated as ~100% confidence
 
 
 def _rescale_confidence(raw: float) -> float:
@@ -106,12 +105,29 @@ async def retrieve(
         reverse=True,
     )
 
-    raw_confidence = (
-        sum(scores[:3]) / min(len(scores), 3)
-        if scores
-        else 0.0
-    )
+    # FIX: was a flat average of the top 3 scores. If the best chunk is
+    # a strong, genuinely on-topic match but the 2nd/3rd are weaker
+    # (common — top_k pulls in some marginal chunks as padding), a flat
+    # average drags a good answer's confidence down to look like a bad
+    # one. Weighting the best score more heavily is more representative
+    # of "how good was the evidence this answer is actually grounded
+    # in" than "how good was the average of everything retrieved".
+    if scores:
+        best = scores[0]
+        avg_top3 = sum(scores[:3]) / min(len(scores), 3)
+        raw_confidence = 0.7 * best + 0.3 * avg_top3
+    else:
+        raw_confidence = 0.0
     confidence = _rescale_confidence(raw_confidence)
+
+    # Always-on for now — watch your backend console while testing real
+    # questions. If clearly-correct answers keep showing rescaled
+    # confidence below ~50%, raise _HIGH_ANCHOR above; if clearly-wrong/
+    # no-match questions still show above ~30%, raise _LOW_ANCHOR above.
+    # Set _CONFIDENCE_DEBUG = False below once you're happy with it.
+    if _CONFIDENCE_DEBUG:
+        print(f"[confidence debug] raw_scores={scores} raw_confidence={raw_confidence:.3f} "
+              f"-> rescaled={confidence:.3f} (anchors {_LOW_ANCHOR}-{_HIGH_ANCHOR})")
 
     return {
         "top": top,
