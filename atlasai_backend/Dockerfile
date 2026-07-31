@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --timeout=120 --retries 5 -r requirements.txt
 
 # Download embedding model during image build
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/multi-qa-MiniLM-L6-cos-v1')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/multi-qa-MiniLM-L6-cos-v1', device='cpu')"
 
 # Copy application source
 COPY ./app ./app
