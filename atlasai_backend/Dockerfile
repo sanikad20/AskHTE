@@ -6,8 +6,11 @@ FROM python:3.11-slim
 WORKDIR /code
 
 # Install system dependencies
+# tesseract-ocr-mar / tesseract-ocr-hin add the Marathi and Hindi
+# trained-data language packs so pytesseract can OCR scanned GRs in
+# those languages (see ingestion.py's lang='eng+mar+hin' call).
 RUN apt-get update && \
-    apt-get install -y tesseract-ocr && \
+    apt-get install -y tesseract-ocr tesseract-ocr-mar tesseract-ocr-hin && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (better Docker layer caching)

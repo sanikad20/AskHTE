@@ -8,6 +8,30 @@ from PIL import Image
 import io
 
 
+# SRS FR2 requires OCR of English and Marathi (we also add Hindi, since
+# NFR "Language Support" lists all three). Tesseract needs the
+# corresponding trained-data packs installed at the OS level — see
+# Dockerfile's tesseract-ocr-mar / tesseract-ocr-hin. If an image is
+# ever run without those packs (e.g. a local dev container built before
+# this change), pytesseract raises TesseractError for an unknown lang
+# code; we fall back to English-only OCR rather than fail ingestion
+# entirely, and log so the gap is visible instead of silent.
+OCR_LANGS = "eng+mar+hin"
+
+
+def _ocr_image(img: Image.Image) -> str:
+    try:
+        return pytesseract.image_to_string(img, lang=OCR_LANGS).strip()
+    except pytesseract.TesseractError as e:
+        print(
+            f"[ingestion] OCR lang='{OCR_LANGS}' failed ({e}); "
+            "falling back to English-only OCR. Check that "
+            "tesseract-ocr-mar/tesseract-ocr-hin are installed on this image.",
+            flush=True,
+        )
+        return pytesseract.image_to_string(img, lang="eng").strip()
+
+
 def extract_pages(file_bytes: bytes) -> List[str]:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
     pages_text = []
@@ -16,7 +40,7 @@ def extract_pages(file_bytes: bytes) -> List[str]:
         if len(text) < 20:
             pix = page.get_pixmap(dpi=200)
             img = Image.open(io.BytesIO(pix.tobytes("png")))
-            text = pytesseract.image_to_string(img).strip()
+            text = _ocr_image(img)
         pages_text.append(text)
     doc.close()
     return pages_text

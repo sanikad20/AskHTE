@@ -202,6 +202,28 @@ async def documents_graph():
     }
 
 
+@app.get("/documents/compare")
+async def documents_compare(doc_a: str, doc_b: str):
+    """SRS 3.6 FR3 — compare two ingested documents and highlight
+    differences. doc_a/doc_b are doc_id values returned by /ingest.
+    Powers the Flutter compare view; document_relationships.compare_documents()
+    already existed but wasn't reachable from any endpoint until now."""
+    docs_by_id = {d["doc_id"]: d for d in document_store.all_documents()}
+
+    missing = [d for d in (doc_a, doc_b) if d not in docs_by_id]
+    if missing:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown doc_id(s): {missing}. Use a doc_id returned by /ingest.",
+        )
+
+    a, b = docs_by_id[doc_a], docs_by_id[doc_b]
+    entities_a = entity_extraction.extract_entities(a["full_text"])
+    entities_b = entity_extraction.extract_entities(b["full_text"])
+
+    return document_relationships.compare_documents(a, b, entities_a, entities_b)
+
+
 @app.get("/graph/{entity_type}/{entity_id}", response_model=GraphNeighborsResponse)
 async def graph_neighbors(entity_type: str, entity_id: str):
     """Day 4 — full graph traversal for any entity type. e.g.

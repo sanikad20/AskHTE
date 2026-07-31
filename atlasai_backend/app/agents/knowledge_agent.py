@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from app.agents.base import BaseAgent
-from app.services import groq_client, retrieval
+from app.services import groq_client, retrieval, language
 
 # VJTI AI Hackathon 2026 — Problem Area 3: AI-Powered Question Answering
 # System for the HTE Department. Retrieval/generation architecture is
@@ -163,7 +163,11 @@ class KnowledgeAgent(BaseAgent):
         relationships = context.get("relationships", [])
         conflicts = context.get("conflicts", [])
 
-        r = await retrieval.retrieve(query, equipment_id=reference_id, n_results=15, top_k=10)
+        # Retrieval needs an English query to match well against the
+        # English-tuned embedder; generation below still gets the
+        # original `query` so it replies in the user's language.
+        retrieval_query = await language.translate_query_to_english(query)
+        r = await retrieval.retrieve(retrieval_query, equipment_id=reference_id, n_results=15, top_k=10)
 
         if not r["top"]:
             return {
