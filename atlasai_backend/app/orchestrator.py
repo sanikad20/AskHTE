@@ -80,20 +80,27 @@ class Orchestrator:
                     "user_role": request.user_role,
                     "equipment_id": request.equipment_id,
                     "doc_ids": request.doc_ids,
+                    "target_language": request.target_language,
                     "relationships": relationships,
                     "conflicts": conflicts,
                 },
             })
             results.append(AgentResult(**raw))
 
+        detected_lang = "English"
+        admin_recs = []
+        sugg_circs = []
+
         if results:
-            # Prefer knowledge_agent's answer for merged_answer — it's
-            # the synthesized, citation-grounded one.
             knowledge_result = next((r for r in results if r.agent == "knowledge_agent"), None)
             if knowledge_result:
                 merged_answer = knowledge_result.answer
+                detected_lang = knowledge_result.detected_language or "English"
+                admin_recs = knowledge_result.administrative_recommendations or []
+                sugg_circs = knowledge_result.suggested_circulars or []
             else:
                 merged_answer = " | ".join(r.answer for r in results)
+                detected_lang = results[0].detected_language or "English"
             overall_confidence = sum(r.confidence for r in results) / len(results)
         else:
             merged_answer = "No agent could handle this request."
@@ -104,10 +111,14 @@ class Orchestrator:
             results=results,
             merged_answer=merged_answer,
             overall_confidence=overall_confidence,
+            detected_language=detected_lang,
+            administrative_recommendations=admin_recs,
+            suggested_circulars=sugg_circs,
             relationships=relationships,
             conflicts=conflicts,
             timeline=timeline,
         )
+
 
 
 orchestrator = Orchestrator()

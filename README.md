@@ -1,175 +1,131 @@
-# AtlasAI
+# AskHTE — AI-Powered Question Answering System for the HTE Department
 
-**ET AI Hackathon 2026 · Problem Statement 8 — Industrial Knowledge Intelligence**
+**VJTI AI Hackathon 2026 · Problem Area 3 — AI-Powered Question Answering System for Higher & Technical Education (HTE) Department**
 
-### The Unified Asset & Operations Brain for Industrial Teams
+> "Ask Official Documents. Get Cited, Trusted Answers."
 
-> "Stop searching through hundreds of manuals. Start asking AtlasAI."
+AskHTE is an AI-powered administrative assistant built for the Higher and Technical Education (HTE) Department, Maharashtra Government. It enables department staff, institute administrators, faculty, and students to quickly retrieve information from official circulars, Government Resolutions (GRs), notices, and policy documents.
 
-AtlasAI is an AI-powered industrial maintenance assistant that helps engineers, technicians, plant managers, and auditors retrieve equipment knowledge, diagnose issues, and generate maintenance documents. It's built on Retrieval-Augmented Generation (RAG), a knowledge graph, and a large language model, so answers are grounded in your team's actual documentation instead of guesswork.
-
-Instead of digging through SOPs, maintenance logs, and equipment manuals by hand, you can just ask AtlasAI a question in plain language and get a sourced answer back in seconds.
+Answers are strictly grounded in authenticated government documents using **Retrieval-Augmented Generation (RAG)**, vector embeddings, and LLM synthesis.
 
 ---
 
-## Try It
+## 🌟 Key Features Implemented
 
-**App:** [Download / open the AtlasAI app](https://drive.google.com/file/d/1ZdDgrQgCD-Nn1dSDNyetgU0NA_dh2eAS/view?usp=sharing)
+### 1. 🌐 Multilingual Support (English • Marathi • Hindi)
+- Accepts queries in **English**, **मराठी (Marathi)**, and **हिंदी (Hindi)**.
+- Automatic language detection and user-controlled response language switcher.
+- Preserves official Indian Government terminology (e.g. GR numbers, circular numbers, CAP round, scheme titles, DTE guidelines) during translation.
 
-**Backend API:** [https://ethack-genai.onrender.com/](https://ethack-genai.onrender.com/)
+### 2. 📌 Source Citations & Confidence Scores
+- Every AI-generated answer displays:
+  - Source document name
+  - Relevant GR/Circular number
+  - Page & section numbers
+  - RAG confidence score percentage (`99.4%`)
+- **Clickable Citations**: Tap any source chip to open and verify the authenticated government document passage.
 
-The backend is hosted on Render's free tier, so the first request after a period of inactivity can take 30-60 seconds to wake the service up. Requests after that are fast. If you're demoing this live, hit `GET /ping` a minute beforehand to warm it up.
+### 3. 📄 Document Summarization
+- On-demand summary generation for any ingested government circular or resolution.
+- Supports both **Concise** (3-4 sentence) and **Detailed** (comprehensive) depth.
+- Automatically extracts **Key Bullet Points**, **Effective Date**, **Applicability**, and **Issuing Authority**.
+
+### 4. ⚖️ Document Comparison & Clause Diffing
+- Compares any two Government Resolutions or circulars side-by-side.
+- Highlights:
+  - ➕ **Added Clauses** (new provisions introduced)
+  - ➖ **Removed Clauses** (superseded legacy conditions)
+  - ✏️ **Modified Provisions** (updated timelines and guidelines)
+  - 💡 **Policy Differences** (structural administrative updates)
+
+### 5. 🔒 Authenticated Government Document Retrieval
+- Answers are generated **ONLY** from authenticated government documents stored in the ChromaDB knowledge base.
+- If sufficient information is unavailable in the ingested documents, AskHTE returns a clear message: `"Information unavailable in authenticated government documents."` preventing hallucination.
+
+### 6. 🏛️ AI-Assisted Administrative Decision Support
+- Provides actionable administrative recommendations under answers.
+- Suggests related Government Resolutions, circulars, and departmental compliance directives.
+
+### 7. 🏷️ Enhanced Chat & Badging System
+- Displays visual trust badges on answers:
+  - `🔒 Verified Source`
+  - `⚡ RAG Powered`
+  - `Confidence Score`
+  - `Language (EN/MR/HI)`
 
 ---
 
-## Why We Built This
-
-Industrial maintenance teams deal with thousands of pages of documentation — manuals, SOPs, inspection logs, incident reports. Finding the right piece of information during an actual equipment failure is usually slow, manual, and easy to get wrong.
-
-AtlasAI uses semantic search and retrieval-augmented generation to read through that documentation the way an experienced engineer would, and gives equipment-specific answers grounded in what's actually been written down, not a generic guess.
-
----
-
-## What It Does
-
-**Knowledge Assistant**
-Ask questions in plain language and get answers grounded in your uploaded maintenance documents, with equipment-aware search and source citations for every response.
-
-**Retrieval-Augmented Generation**
-Answers are built only from what's actually in your documents. If the answer isn't in there, AtlasAI says so instead of making something up.
-
-**AI Action Engine**
-Generates maintenance documents on demand:
-- Root Cause Analysis reports
-- Maintenance checklists
-- Inspection reports
-- Preventive maintenance plans
-- Corrective action reports
-- Audit reports
-
-**Role-Based Responses**
-The same question gets answered differently depending on who's asking:
-
-- *Engineer* — technical troubleshooting, repair recommendations, inspection guidance
-- *Plant Manager* — maintenance planning, compliance monitoring, resource allocation
-- *Technician* — step-by-step repair instructions, equipment-specific procedures
-- *Auditor* — compliance verification, documentation review, audit summaries
-
----
-
-## How It Works
+## 🏗️ System Architecture
 
 ```text
-             Maintenance Documents
-                      |
-                      v
-          Document Processing & Embeddings
-                      |
-                      v
-              Chroma Vector Database
-                      |
-                      v
-         Semantic Search + Knowledge Graph
-                      |
-                      v
-              Groq — Llama 3.3 70B
-                      |
-                      v
-         Explainable AI Recommendations
-                      |
-                      v
-       Action Engine + Knowledge Assistant
-                      |
-                      v
-              Role-Based Response
+               Official HTE Documents (PDFs / GRs / Circulars)
+                                      |
+                                      v
+                    Document Ingestion & Chunking
+                                      |
+                                      v
+                      Chroma Vector Store + Knowledge Graph
+                                      |
+                                      v
+          Multilingual Translation & Semantic Vector Search
+                                      |
+                                      v
+                        Groq (Llama 3.3 70B Engine)
+                                      |
+                                      v
+         Grounded Answer + Citations + Administrative Recommendations
+                                      |
+                                      v
+                       AskHTE Flutter Client & API
 ```
-
-### Architecture
-
-![AtlasAI Architecture](docs/architecture-diagram.jpg)
-
-The system has three main pieces: a Flutter client, a FastAPI backend running five core services (Auth, Document, Knowledge Agent, Action Engine, Graph), and an AI/ML pipeline that handles ingestion, chunking, embedding, vector storage, retrieval, and generation. External services are Groq (for the LLM) and a sentence-transformers embedding model.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### 🎨 Frontend
+### 🎨 Frontend (`atlasai_app`)
+- **Framework**: Flutter (Dart)
+- **Theme**: Obsidian Cyberpunk Dark Theme with Purple Neon Accents
+- **Features**: Voice Input (Speech-to-Text), Multilingual Switcher, Document Summarizer Modal, Document Comparison Modal, Clickable Citation Chips
 
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg" width="22"/> Flutter &nbsp;
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dart/dart-original.svg" width="22"/> Dart &nbsp;
-<img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" width="22"/> Firebase Authentication &nbsp;
-<img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" width="22"/> Cloud Firestore &nbsp;
-<img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" width="22"/> Firebase Storage
-
-### ⚙️ Backend
-
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="22"/> FastAPI &nbsp;
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="22"/> Python
-
-### 🤖 AI / ML
-
-🦙 Groq (Llama 3.3 70B) &nbsp;
-🔍 Retrieval-Augmented Generation (RAG) &nbsp;
-💾 ChromaDB &nbsp;
-🤗 Sentence Transformers &nbsp;
-🧠 Knowledge Graph
-
-### 🗄️ Database
-
-<img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" width="22"/> Firestore &nbsp;
-💾 Chroma Vector Database
+### ⚙️ Backend (`atlasai_backend`)
+- **Framework**: FastAPI (Python)
+- **AI/ML Engine**: Groq (Llama 3.3 70B)
+- **Vector DB**: ChromaDB
+- **Embeddings**: `sentence-transformers/multi-qa-MiniLM-L6-cos-v1`
+- **Services**:
+  - `language.py`: Multilingual detection, query translation, and term-preserving response translation
+  - `retrieval.py`: Semantic vector retrieval & confidence scoring
+  - `document_relationships.py`: Graph analysis, timeline building, conflict detection, LLM clause diffing, & summarization
 
 ---
 
-## Getting Started
+## 🔌 API Endpoints Summary
 
-### Backend
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/ping` | Health check endpoint |
+| `POST` | `/query` | Main RAG Q&A endpoint (supports `target_language`, `equipment_id`) |
+| `POST` | `/ingest` | Upload & ingest government PDF documents |
+| `GET` | `/documents/list` | List all ingested government documents |
+| `POST` | `/documents/summarize` | Summarize document (`short` or `detailed`) |
+| `GET` | `/documents/compare` | Compare 2 circulars & return clause diffs |
+| `GET` | `/documents/graph` | Document relationship graph, timeline, and conflict analysis |
 
+---
+
+## 🚀 Getting Started
+
+### 1. Run the Backend API
 ```bash
 cd atlasai_backend
-cp .env.example .env   # fill in GROQ_API_KEY, HF_API_TOKEN, etc.
-docker compose up --build
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-Check it's running:
-
-```bash
-curl http://localhost:8000/ping
-```
-
-### Frontend
-
+### 2. Run the Flutter App
 ```bash
 cd atlasai_app
 flutter pub get
-flutter run
+flutter run -d chrome   # Or: flutter run -d linux
 ```
-
----
-
-## Where We'd Take This Next
-
-- IoT sensor integration for real-time equipment data
-- Predictive maintenance based on historical patterns
-- Voice commands for hands-free field use
-- ERP/SAP integration
-- Smart notifications for anomalies and overdue maintenance
-- Multi-language support for regional teams
-- A more mobile-first field experience
-
----
-
-## Team
-
-**Team GenAI**
-
-| Role | Name | GitHub |
-|------|------|--------|
-| Team Lead | Sanika Deshmukh | [@sanikad20](https://github.com/sanikad20) |
-| Team Member | Pragati Kharat | [@pragatikharat17](https://github.com/pragatikharat17) |
-| Team Member | Divya Addagatla | [@adivya15](https://github.com/adivya15) |
-
----
-
-If you found AtlasAI interesting, consider starring the repository.

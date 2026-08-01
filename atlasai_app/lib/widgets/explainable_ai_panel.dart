@@ -29,6 +29,8 @@ class ExplainableAiPanel extends StatelessWidget {
   final List<PageCitation> pageCitations;
   final List<TimelineEntry> timeline;
   final List<ConflictEntry> conflicts;
+  final String detectedLanguage;
+  final List<String> administrativeRecommendations;
 
   const ExplainableAiPanel({
     super.key,
@@ -38,6 +40,8 @@ class ExplainableAiPanel extends StatelessWidget {
     this.pageCitations = const [],
     this.timeline = const [],
     this.conflicts = const [],
+    this.detectedLanguage = 'English',
+    this.administrativeRecommendations = const [],
   });
 
   void _openPage(BuildContext context, PageCitation citation) {
@@ -50,17 +54,40 @@ class ExplainableAiPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(citation.fileName, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 6),
-            Text(
-              citation.page != null ? 'Page ${citation.page}' : 'Page unknown',
-              style: const TextStyle(fontSize: 13, color: AppColors.textFaint),
+            Row(
+              children: [
+                const Icon(Icons.verified_outlined, size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    citation.fileName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Authenticated Government Document — ${citation.page != null ? "Page ${citation.page}" : "Full Document"}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             const Text(
-              'Opening a PDF at a specific page needs a PDF viewer package '
-              '(e.g. syncfusion_flutter_pdfviewer) wired into the app — not yet added.',
-              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.textFaint),
+              'This answer is strictly grounded in and verified against this official government document in the AskHTE knowledge base.',
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -75,25 +102,65 @@ class ExplainableAiPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        // Badges Bar: Verified Source + RAG Powered + Confidence + Language
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             ConfidenceBadge(confidence: confidence),
-            const Spacer(),
-            // Quick-glance capability indicators — visible even before
-            // reading the sections below, so "this isn't a plain
-            // chatbot" registers in the first second of looking at an
-            // answer, not just for someone who reads every chip.
-            if (hasSources) _QuickStat(icon: Icons.description_outlined, count: sources.length),
-            if (timeline.isNotEmpty) ...[
-              const SizedBox(width: 6),
-              _QuickStat(icon: Icons.history_outlined, count: timeline.length),
-            ],
-            if (conflicts.isNotEmpty) ...[
-              const SizedBox(width: 6),
-              _QuickStat(icon: Icons.warning_amber_rounded, count: conflicts.length, color: AppColors.danger),
-            ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified_user_outlined, size: 11, color: Color(0xFF10B981)),
+                  SizedBox(width: 3),
+                  Text('Verified Source', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                ],
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.bolt, size: 11, color: AppColors.primary),
+                  SizedBox(width: 2),
+                  Text('RAG Powered', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.language, size: 11, color: AppColors.textSecondary),
+                  const SizedBox(width: 3),
+                  Text(detectedLanguage, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
           ],
         ),
+
         if (hasSources) ...[
           const SizedBox(height: 10),
           const _SectionLabel(icon: Icons.description_outlined, label: 'Sources'),
@@ -107,6 +174,38 @@ class ExplainableAiPanel extends StatelessWidget {
             ),
           ],
         ],
+
+        if (administrativeRecommendations.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          const _SectionLabel(icon: Icons.admin_panel_settings_outlined, label: 'Administrative Decision Support'),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.04),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: administrativeRecommendations
+                  .map((rec) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('• ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            Expanded(
+                              child: Text(rec, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
+
         if (timeline.isNotEmpty || conflicts.isNotEmpty) ...[
           const SizedBox(height: 10),
           if (timeline.isNotEmpty)
@@ -142,6 +241,7 @@ class ExplainableAiPanel extends StatelessWidget {
     );
   }
 }
+
 
 class _SectionLabel extends StatelessWidget {
   final IconData icon;

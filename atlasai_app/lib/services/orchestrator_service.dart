@@ -52,24 +52,20 @@ class OrchestratorService {
     String userRole = 'technician',
     String? equipmentId,
     List<String>? agents,
+    String? targetLanguage,
   }) async {
     final url = Uri.parse('$baseUrl/query');
 
     print("Sending query to: $url");
 
-    // Build the request body. `agents` is only included when non-null,
-    // so callers that don't pass it get the same body shape as before
-    // (query, user_role, equipment_id) — no behavior change for them.
     final requestBody = {
       'query': userQuery,
       'user_role': userRole,
       'equipment_id': equipmentId,
       if (agents != null) 'agents': agents,
+      if (targetLanguage != null) 'target_language': targetLanguage,
     };
 
-    // Debug: log the exact outgoing request body so we can confirm
-    // the Auditor screen (or any caller) is actually sending
-    // agents: ["compliance_agent"] and not silently dropping it.
     print("===== Outgoing Request Body =====");
     print(jsonEncode(requestBody));
 
@@ -81,23 +77,42 @@ class OrchestratorService {
       body: jsonEncode(requestBody),
     );
 
-    print("Query Status: ${res.statusCode}");
-    print("Query Response: ${res.body}");
-
     if (res.statusCode != 200) {
-      throw Exception(
-        'Orchestrator error: ${res.statusCode}\n${res.body}',
-      );
+      throw Exception('Orchestrator error: ${res.statusCode}\n${res.body}');
     }
 
-    final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
 
-    // Debug: log the fully decoded response so we can confirm the
-    // "results" list shape (agent/answer/confidence/sources/reasoning)
-    // matches what each screen expects to parse.
-    print("===== Decoded Response =====");
-    print(decoded);
+  /// Fetches list of all ingested government documents.
+  Future<List<Map<String, dynamic>>> listDocuments() async {
+    final url = Uri.parse('$baseUrl/documents/list');
+    final res = await http.get(url);
+    if (res.statusCode != 200) return [];
+    return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+  }
 
-    return decoded;
+  /// Generates a summary for a specific government document.
+  Future<Map<String, dynamic>> summarizeDocument(String docId, {String detailLevel = 'short'}) async {
+    final url = Uri.parse('$baseUrl/documents/summarize');
+    final res = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'doc_id': docId, 'detail_level': detailLevel}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Summarize error: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Compares two government circulars/GRs and highlights clause differences.
+  Future<Map<String, dynamic>> compareDocuments(String docA, String docB) async {
+    final url = Uri.parse('$baseUrl/documents/compare?doc_a=$docA&doc_b=$docB');
+    final res = await http.get(url);
+    if (res.statusCode != 200) {
+      throw Exception('Compare error: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
   }
 }

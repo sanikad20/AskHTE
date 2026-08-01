@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem Area 3: AI-Powered Question Answering System for HTE Department</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07080e;
+            --card-bg: rgba(15, 14, 29, 0.75);
+            --card-bg-solid: #0f0e1d;
+            --purple-neon: #a855f7;
+            --purple-glow: rgba(168, 85, 247, 0.35);
+            --purple-border: rgba(168, 85, 247, 0.5);
+            --cyan-neon: #06b6d4;
+            --cyan-glow: rgba(6, 182, 212, 0.3);
+            --emerald-neon: #10b981;
+            --pink-neon: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 40%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        .poster-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* PROBLEM AREA 3 CARD */
+        .problem-card {
+            position: relative;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--purple-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 
+                0 0 30px var(--purple-glow),
+                inset 0 0 20px rgba(168, 85, 247, 0.08),
+                0 20px 40px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--purple-neon), var(--cyan-neon), transparent);
+        }
+
+        /* Top Header Badge */
+        .card-badge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .problem-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #d8b4fe;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.825rem;
+            font-weight: 600;
+            padding: 0.4rem 0.9rem;
+            border-radius: 30px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--purple-neon);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--purple-neon);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(168, 85, 247, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+
+        .gov-auth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+            font-size: 0.775rem;
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+        }
+
+        /* Title & Tagline */
+        .card-header-main {
+            margin-bottom: 2rem;
+        }
+
+        .card-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 40%, #c084fc 80%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.6rem;
+        }
+
+        .card-tagline {
+            font-size: 1.15rem;
+            color: var(--cyan-neon);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .card-tagline::before {
+            content: '“';
+            font-size: 1.5rem;
+            color: var(--purple-neon);
+            line-height: 0;
+        }
+
+        .card-tagline::after {
+            content: '”';
+            font-size: 1.5rem;
+            color: var(--purple-neon);
+            line-height: 0;
+        }
+
+        /* Grid Layout */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        /* Feature List */
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            list-style: none;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            transition: all 0.25 ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(168, 85, 247, 0.08);
+            border-color: rgba(168, 85, 247, 0.3);
+            transform: translateX(4px);
+        }
+
+        .feature-icon {
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--purple-neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            margin-top: 1px;
+            box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+        }
+
+        .feature-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        /* Cyber Visual Illustration Area */
+        .illustration-container {
+            position: relative;
+            background: rgba(8, 7, 18, 0.7);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.8);
+        }
+
+        /* Cyber grid lines overlay */
+        .illustration-bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(168, 85, 247, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        /* Language Chips Sub-Header */
+        .lang-chips-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 2;
+            margin-bottom: 1rem;
+        }
+
+        .lang-chips-group {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .lang-chip {
+            font-size: 0.725rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            backdrop-filter: blur(4px);
+            transition: all 0.2s ease;
+        }
+
+        .lang-chip.active-en {
+            color: var(--cyan-neon);
+            border-color: rgba(6, 182, 212, 0.5);
+            background: rgba(6, 182, 212, 0.12);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.25);
+        }
+
+        .lang-chip.active-mr {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            color: var(--pink-neon);
+            border-color: rgba(236, 72, 153, 0.5);
+            background: rgba(236, 72, 153, 0.12);
+            box-shadow: 0 0 8px rgba(236, 72, 153, 0.25);
+        }
+
+        .lang-chip.active-hi {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            color: #f59e0b;
+            border-color: rgba(245, 158, 11, 0.5);
+            background: rgba(245, 158, 11, 0.12);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+        }
+
+        .rag-node-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--purple-neon);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        /* SVG Architecture Canvas */
+        .arch-svg-box {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 220px;
+        }
+
+        /* Action Nodes Bar (Summary & Comparison Icons) */
+        .action-nodes-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            z-index: 2;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed rgba(168, 85, 247, 0.25);
+        }
+
+        .action-node-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 8px;
+            padding: 0.4rem 0.7rem;
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: #d8b4fe;
+        }
+
+        .action-node-pill.cyan {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: rgba(6, 182, 212, 0.3);
+            color: #7dd3fc;
+        }
+
+        .citation-tag-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #a7f3d0;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 900px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            .problem-card {
+                padding: 1.75rem;
+            }
+            .card-title {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="poster-container">
+        <!-- PROBLEM AREA 3 CARD -->
+        <div class="problem-card">
+            
+            <!-- Top Header Badge -->
+            <div class="card-badge-header">
+                <div class="problem-tag">
+                    <span class="pulse-dot"></span>
+                    Problem Area 3
+                </div>
+                <div class="gov-auth-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+                    Authenticated Gov Documents
+                </div>
+            </div>
+
+            <!-- Title & Tagline -->
+            <div class="card-header-main">
+                <h2 class="card-title">AI-Powered Question Answering System for the HTE Department</h2>
+                <div class="card-tagline">Ask Official Documents. Get Cited, Trusted Answers.</div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="card-grid">
+
+                <!-- Refined Feature List -->
+                <ul class="features-list">
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">Accurate, Source-Grounded Answers</span>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">Semantic Search & Retrieval-Augmented Generation (RAG)</span>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">Multilingual Support (English • Marathi • Hindi)</span>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">Document Summarization & Comparison</span>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">Source Citations & Confidence Scores</span>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">Answers Only from Authenticated Government Documents</span>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="feature-text">AI-Assisted Administrative Decision Support</span>
+                    </li>
+                </ul>
+
+                <!-- Cyber/Neon System Illustration -->
+                <div class="illustration-container">
+                    <div class="illustration-bg-grid"></div>
+
+                    <!-- Top Sub-Header: Language Chips & RAG Tag -->
+                    <div class="lang-chips-bar">
+                        <div class="lang-chips-group">
+                            <span class="lang-chip active-en">EN</span>
+                            <span class="lang-chip active-mr">मराठी</span>
+                            <span class="lang-chip active-hi">हिंदी</span>
+                        </div>
+                        <span class="rag-node-label">RAG PIPELINE v5.0</span>
+                    </div>
+
+                    <!-- Enhanced Interactive RAG Architecture SVG Graphic -->
+                    <div class="arch-svg-box">
+                        <svg width="100%" height="100%" viewBox="0 0 460 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="purpleGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#a855f7" stop-opacity="0.8"/>
+                                    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.3"/>
+                                </linearGradient>
+                                <linearGradient id="cyanGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.8"/>
+                                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.3"/>
+                                </linearGradient>
+                                <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="4" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                            </defs>
+
+                            <!-- Document Store Nodes (Left) -->
+                            <g transform="translate(15, 25)">
+                                <rect x="0" y="0" width="105" height="150" rx="10" fill="#13122b" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="0" />
+                                <!-- Document Header -->
+                                <path d="M 12 18 H 65" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M 12 28 H 85" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M 12 36 H 75" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M 12 44 H 80" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
+
+                                <!-- Gov Authenticated Stamp -->
+                                <rect x="10" y="58" width="85" height="24" rx="4" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1"/>
+                                <text x="52" y="74" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="700" font-family="'JetBrains Mono', monospace">GOV-AUTH 🔒</text>
+
+                                <!-- Embedded Chunks -->
+                                <rect x="10" y="92" width="85" height="20" rx="4" fill="rgba(168, 85, 247, 0.15)" stroke="#a855f7" stroke-width="1"/>
+                                <text x="52" y="105" text-anchor="middle" fill="#d8b4fe" font-size="8.5" font-weight="600">Vector Embeddings</text>
+
+                                <rect x="10" y="118" width="85" height="20" rx="4" fill="rgba(6, 182, 212, 0.12)" stroke="#06b6d4" stroke-width="1"/>
+                                <text x="52" y="131" text-anchor="middle" fill="#7dd3fc" font-size="8.5" font-weight="600">HTE Circulars & GRs</text>
+                            </g>
+
+                            <!-- Connecting Flow Lines (Pulse Animations) -->
+                            <path d="M 120 60 C 160 60, 160 95, 195 95" stroke="url(#purpleGlowGrad)" stroke-width="2" fill="none" filter="url(#glowEffect)"/>
+                            <circle cx="155" cy="78" r="3" fill="#a855f7">
+                                <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
+                            </circle>
+
+                            <path d="M 120 130 C 160 130, 160 105, 195 105" stroke="url(#cyanGlowGrad)" stroke-width="2" fill="none" filter="url(#glowEffect)"/>
+                            <circle cx="155" cy="118" r="3" fill="#06b6d4">
+                                <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite" />
+                            </circle>
+
+                            <!-- Central RAG / AI Engine Core Node -->
+                            <g transform="translate(195, 45)">
+                                <rect x="0" y="0" width="115" height="110" rx="14" fill="#0d1527" stroke="#06b6d4" stroke-width="1.8" filter="url(#glowEffect)"/>
+                                <circle cx="57.5" cy="40" r="22" fill="rgba(6, 182, 212, 0.15)" stroke="#06b6d4" stroke-width="1.5"/>
+                                <!-- AI Brain / Spark Icon -->
+                                <path d="M 57.5 28 L 60.5 35 L 67.5 38 L 60.5 41 L 57.5 48 L 54.5 41 L 47.5 38 L 54.5 35 Z" fill="#38bdf8"/>
+                                
+                                <text x="57.5" y="78" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="700">RAG AI Engine</text>
+                                <text x="57.5" y="93" text-anchor="middle" fill="#94a3b8" font-size="8.5" font-family="'JetBrains Mono', monospace">Groq Llama 70B</text>
+                            </g>
+
+                            <!-- Output Connecting Line -->
+                            <path d="M 310 100 H 345" stroke="url(#purpleGlowGrad)" stroke-width="2" fill="none" filter="url(#glowEffect)"/>
+
+                            <!-- Sourced Answer Output Box (Right) -->
+                            <g transform="translate(345, 25)">
+                                <rect x="0" y="0" width="105" height="150" rx="10" fill="#13122b" stroke="#10b981" stroke-width="1.5" />
+                                
+                                <!-- Confidence Badge -->
+                                <rect x="8" y="12" width="89" height="22" rx="4" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1"/>
+                                <text x="52.5" y="26" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="700" font-family="'JetBrains Mono', monospace">Confidence: 99.4%</text>
+
+                                <!-- Text Lines representing Cited Answer -->
+                                <path d="M 12 46 H 93" stroke="#f8fafc" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M 12 55 H 85" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M 12 64 H 90" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M 12 73 H 70" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+
+                                <!-- Source Citation Chips (Crucial Enhancement) -->
+                                <rect x="8" y="88" width="89" height="24" rx="4" fill="rgba(168, 85, 247, 0.15)" stroke="#a855f7" stroke-width="1"/>
+                                <text x="52.5" y="103" text-anchor="middle" fill="#d8b4fe" font-size="8.5" font-weight="600" font-family="'JetBrains Mono', monospace">📌 [GR-2026 §4.1]</text>
+
+                                <rect x="8" y="118" width="89" height="22" rx="4" fill="rgba(6, 182, 212, 0.15)" stroke="#06b6d4" stroke-width="1"/>
+                                <text x="52.5" y="132" text-anchor="middle" fill="#7dd3fc" font-size="8" font-weight="600" font-family="'JetBrains Mono', monospace">Cited & Grounded</text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Enhanced Action Nodes Footer (Summarization, Comparison, Citations) -->
+                    <div class="action-nodes-footer">
+                        <!-- Document Summarization Icon Node -->
+                        <div class="action-node-pill">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                            Summarization
+                        </div>
+
+                        <!-- Document Comparison Icon Node -->
+                        <div class="action-node-pill cyan">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+                            Doc Comparison
+                        </div>
+
+                        <!-- Citation & Confidence Tag -->
+                        <div class="citation-tag-mini">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                            Citations & Scores
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

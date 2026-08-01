@@ -1,4 +1,6 @@
+import '../theme/app_theme.dart';
 import '../widgets/page_citation_chips.dart';
+
 
 /// Represents one turn in the Knowledge Agent chat.
 /// Assistant messages carry the extra fields the backend now returns:
@@ -11,18 +13,13 @@ class ChatMessage {
   final List<String> sources;
   final String? reasoning;
   final bool isError;
-  // New: structured page citations (AgentResult.citations) and the
-  // document_relationships.py output for whatever's been ingested this
-  // session (OrchestratorResponse.relationships/conflicts) — power
-  // PageCitationChips and RelationshipTimelineCard respectively.
   final List<PageCitation> pageCitations;
   final List<Map<String, dynamic>> relationships;
   final List<Map<String, dynamic>> conflicts;
-  // New: the dated, ordered chain from build_timeline() — separate from
-  // `relationships` (raw graph edges with no date attached) because
-  // RelationshipTimelineCard needs a date on each entry to draw the
-  // vertical timeline.
   final List<Map<String, dynamic>> timeline;
+  final String detectedLanguage;
+  final List<String> administrativeRecommendations;
+  final List<String> suggestedCirculars;
 
   ChatMessage({
     required this.text,
@@ -35,28 +32,11 @@ class ChatMessage {
     this.relationships = const [],
     this.conflicts = const [],
     this.timeline = const [],
+    this.detectedLanguage = 'English',
+    this.administrativeRecommendations = const [],
+    this.suggestedCirculars = const [],
   });
 
-  /// Builds the assistant message straight from the /query response body.
-  ///
-  /// FIX: previously this pooled `sources` from every agent that ran
-  /// (via `sources.addAll(...)` across all `results`) and always took
-  /// `reasoning` from `results.first`. But `merged_answer` — the text
-  /// actually shown to the user — is the orchestrator's *preferred*
-  /// agent's answer (knowledge_agent if it ran, per orchestrator.py's
-  /// `_route`/merge logic; otherwise whichever ran). When a query
-  /// triggers more than one agent (e.g. a maintenance-flavored
-  /// question also matches knowledge_agent), the citation chips and
-  /// reasoning text were silently mixing in a *different* agent's
-  /// sources/reasoning than the one backing the displayed answer —
-  /// so citation numbers and the confidence badge didn't reliably
-  /// correspond to the text on screen.
-  ///
-  /// Now this mirrors the backend's own selection: pick the same
-  /// single "primary" result (knowledge_agent if present, else the
-  /// first result) and take confidence/sources/reasoning from that
-  /// one result only, in its original order — consistent with what's
-  /// actually displayed.
   factory ChatMessage.fromOrchestratorResponse(Map<String, dynamic> json) {
     final results = List<Map<String, dynamic>>.from(
       (json['results'] as List? ?? const []).map((r) => Map<String, dynamic>.from(r)),
@@ -84,6 +64,24 @@ class ChatMessage {
             .toList()
         : <PageCitation>[];
 
+    final detectedLang = (json['detected_language'] as String?) ??
+        (primary?['detected_language'] as String?) ??
+        'English';
+
+    final adminRecs = List<String>.from(
+      (json['administrative_recommendations'] as List? ??
+              primary?['administrative_recommendations'] as List? ??
+              const [])
+          .map((e) => e.toString()),
+    );
+
+    final suggCircs = List<String>.from(
+      (json['suggested_circulars'] as List? ??
+              primary?['suggested_circulars'] as List? ??
+              const [])
+          .map((e) => e.toString()),
+    );
+
     final relationships = List<Map<String, dynamic>>.from(
       (json['relationships'] as List? ?? const []).map((r) => Map<String, dynamic>.from(r)),
     );
@@ -94,9 +92,13 @@ class ChatMessage {
       (json['timeline'] as List? ?? const []).map((t) => Map<String, dynamic>.from(t)),
     );
 
+    final rawText = json['merged_answer'] as String? ?? '';
+    final cleanedText = cleanDevanagari(rawText);
+
     return ChatMessage(
-      text: json['merged_answer'] as String? ?? '',
+      text: cleanedText,
       isUser: false,
+
       confidence: confidence,
       sources: sources,
       reasoning: reasoning,
@@ -104,6 +106,9 @@ class ChatMessage {
       relationships: relationships,
       conflicts: conflicts,
       timeline: timeline,
+      detectedLanguage: detectedLang,
+      administrativeRecommendations: adminRecs,
+      suggestedCirculars: suggCircs,
     );
   }
 }

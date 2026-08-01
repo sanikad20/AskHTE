@@ -202,12 +202,37 @@ async def documents_graph():
     }
 
 
-@app.get("/documents/compare")
+@app.get("/documents/list")
+async def list_documents():
+    """Returns a list of all ingested government documents for selection in summary/compare UIs."""
+    docs = document_store.all_documents()
+    return [
+        {
+            "docId": d["doc_id"],
+            "fileName": d.get("file_name", "Untitled Document"),
+            "primaryRef": d.get("primary_ref"),
+            "date": d.get("date"),
+        }
+        for d in docs
+    ]
+
+
+@app.post("/documents/summarize", response_model=DocumentSummaryResponse)
+async def summarize_doc(payload: DocumentSummaryRequest):
+    """Generates a concise or detailed summary of an ingested government document."""
+    docs_by_id = {d["doc_id"]: d for d in document_store.all_documents()}
+    if payload.doc_id not in docs_by_id:
+        raise HTTPException(404, f"Document {payload.doc_id} not found in store.")
+    
+    doc = docs_by_id[payload.doc_id]
+    result = await document_relationships.summarize_document(doc, detail_level=payload.detail_level or "short")
+    return DocumentSummaryResponse(**result)
+
+
+@app.get("/documents/compare", response_model=DocumentCompareResponse)
 async def documents_compare(doc_a: str, doc_b: str):
-    """SRS 3.6 FR3 — compare two ingested documents and highlight
-    differences. doc_a/doc_b are doc_id values returned by /ingest.
-    Powers the Flutter compare view; document_relationships.compare_documents()
-    already existed but wasn't reachable from any endpoint until now."""
+    """Compares two ingested Government Resolutions or circulars, highlighting
+    added, removed, and modified clauses as well as policy differences."""
     docs_by_id = {d["doc_id"]: d for d in document_store.all_documents()}
 
     missing = [d for d in (doc_a, doc_b) if d not in docs_by_id]
@@ -221,7 +246,22 @@ async def documents_compare(doc_a: str, doc_b: str):
     entities_a = entity_extraction.extract_entities(a["full_text"])
     entities_b = entity_extraction.extract_entities(b["full_text"])
 
-    return document_relationships.compare_documents(a, b, entities_a, entities_b)
+    base_result = document_relationships.compare_documents(a, b, entities_a, entities_b)
+    llm_diff = await document_relationships.compare_documents_llm(a, b)
+
+    return DocumentCompareResponse(
+        doc_a=doc_a,
+        doc_b=doc_b,
+        file_a=a.get("file_name", "Document A"),
+        file_b=b.get("file_name", "Document B"),
+        rows=[DocumentCompareRow(**r) for r in base_result["rows"]],
+        added_clauses=llm_diff["added_clauses"],
+        removed_clauses=llm_diff["removed_clauses"],
+        modified_clauses=llm_diff["modified_clauses"],
+        policy_differences=llm_diff["policy_differences"],
+    )
+
+
 
 
 @app.get("/graph/{entity_type}/{entity_id}", response_model=GraphNeighborsResponse)

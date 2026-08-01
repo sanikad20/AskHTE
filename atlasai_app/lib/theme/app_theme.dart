@@ -49,11 +49,20 @@ class AppRadius {
   static const double pill = 999;
 }
 
+/// Cleans Devanagari text by removing stray dotted circle placeholders (U+25CC / ◌)
+/// and rejoining orphan diacritic marks.
+String cleanDevanagari(String text) {
+  if (text.isEmpty) return text;
+  String cleaned = text.replaceAll('\u25CC', '').replaceAll('◌', '');
+  cleaned = cleaned.replaceAll(RegExp(r'\s+([\u0900-\u0903\u093B-\u094F\u0955-\u0957])'), r'\1');
+  return cleaned;
+}
+
 class AppTheme {
   AppTheme._();
 
   static ThemeData light() {
-    return ThemeData(
+    final baseTheme = ThemeData(
       useMaterial3: true,
       colorSchemeSeed: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
@@ -77,5 +86,17 @@ class AppTheme {
         border: OutlineInputBorder(borderSide: BorderSide.none),
       ),
     );
+
+    // Apply Devanagari font fallback to all text styles
+    final textTheme = baseTheme.textTheme.apply(
+      fontFamilyFallback: const [
+        'Noto Sans Devanagari',
+        'NotoSansDevanagari',
+        'Roboto',
+        'sans-serif',
+      ],
+    );
+
+    return baseTheme.copyWith(textTheme: textTheme);
   }
 }

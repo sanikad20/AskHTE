@@ -8,6 +8,7 @@ class OrchestratorRequest(BaseModel):
     equipment_id: Optional[str] = None
     doc_ids: Optional[List[str]] = None
     agents: Optional[List[str]] = None        # force specific agents; None = auto-route
+    target_language: Optional[str] = None     # English | Marathi | Hindi (None = auto-detect)
 
 
 class PageCitation(BaseModel):
@@ -24,6 +25,9 @@ class AgentResult(BaseModel):
     # — powers the Flutter CitationChips widget's clickable chips.
     citations: List[PageCitation] = []
     reasoning: str = ""
+    detected_language: Optional[str] = "English"
+    administrative_recommendations: List[str] = []
+    suggested_circulars: List[str] = []
 
 
 class OrchestratorResponse(BaseModel):
@@ -31,6 +35,9 @@ class OrchestratorResponse(BaseModel):
     results: List[AgentResult]
     merged_answer: str
     overall_confidence: float
+    detected_language: Optional[str] = "English"
+    administrative_recommendations: List[str] = []
+    suggested_circulars: List[str] = []
     # Day 4: filled in when request.equipment_id resolves to graph
     # neighbors — e.g. "Linked: 2 documents, 3 person/people." Empty
     # string if there's no equipment_id or no edges yet.
@@ -46,6 +53,44 @@ class OrchestratorResponse(BaseModel):
     # because RelationshipTimelineCard on the Flutter side needs dates
     # attached to each entry, which only build_timeline() computes.
     timeline: List[Dict[str, Any]] = []
+
+
+# --- Document Summarization & Detailed Comparison Schemas ---
+
+class DocumentSummaryRequest(BaseModel):
+    doc_id: str
+    detail_level: Optional[str] = "short"  # short | detailed
+
+
+class DocumentSummaryResponse(BaseModel):
+    docId: str
+    fileName: str
+    summaryType: str
+    summary: str
+    keyPoints: List[str] = []
+    effectiveDate: Optional[str] = None
+    applicability: Optional[str] = None
+    authority: Optional[str] = None
+
+
+class DocumentCompareRow(BaseModel):
+    field: str
+    doc_a: Optional[Any] = None
+    doc_b: Optional[Any] = None
+    differs: bool = False
+
+
+class DocumentCompareResponse(BaseModel):
+    doc_a: str
+    doc_b: str
+    file_a: Optional[str] = None
+    file_b: Optional[str] = None
+    rows: List[DocumentCompareRow] = []
+    added_clauses: List[str] = []
+    removed_clauses: List[str] = []
+    modified_clauses: List[str] = []
+    policy_differences: List[str] = []
+
 
 
 class GraphEdgeOut(BaseModel):

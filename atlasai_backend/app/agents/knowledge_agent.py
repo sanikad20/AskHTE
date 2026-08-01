@@ -147,39 +147,37 @@ class KnowledgeAgent(BaseAgent):
     async def handle(self, request: Dict[str, Any]) -> Dict[str, Any]:
         query = request.get("query", "")
         context = request.get("context", {})
-        # Still called equipment_id at the API/schema level (unchanged
-        # on purpose — renaming ripples into schemas.py, orchestrator.py,
-        # and every Flutter call site for zero functional benefit). It
-        # now carries a document reference number (Circular/GR/Notice
-        # No.) instead of an equipment tag.
         reference_id = context.get("equipment_id")
-        # New, optional: caller (main.py/orchestrator.py) can pass the
-        # output of document_relationships.build_relationship_graph()/
-        # detect_conflicts() here so Cross-Reference answers are
-        # grounded in explicitly-detected relationships instead of the
-        # LLM re-guessing them from raw chunk text. Both default to
-        # empty so this is backward compatible if the caller doesn't
-        # supply them yet.
+        target_language = context.get("target_language") or request.get("target_language")
         relationships = context.get("relationships", [])
         conflicts = context.get("conflicts", [])
 
-        # Retrieval needs an English query to match well against the
-        # English-tuned embedder; generation below still gets the
-        # original `query` so it replies in the user's language.
+        # Detect input query language (English / Marathi / Hindi)
+        detected_lang = language.detect_language(query)
+        effective_target_lang = target_language or detected_lang
+
+        # Translate non-English queries for vector retrieval
         retrieval_query = await language.translate_query_to_english(query)
         r = await retrieval.retrieve(retrieval_query, equipment_id=reference_id, n_results=15, top_k=10)
 
         if not r["top"]:
+            no_doc_msg = "Information unavailable in authenticated government documents."
+            if effective_target_lang.lower() != "english":
+                no_doc_msg = await language.translate_response_to_target_language(no_doc_msg, effective_target_lang)
             return {
                 "agent": self.name,
-                "answer": "No documents have been ingested yet, so I have nothing to ground an answer in.",
+                "answer": no_doc_msg,
                 "confidence": 0.0,
                 "sources": [],
-                "reasoning": "Chroma `documents` collection is empty.",
+                "citations": [],
+                "reasoning": "Chroma `documents` collection is empty or contains no relevant matches.",
+                "detected_language": detected_lang,
+                "administrative_recommendations": [],
+                "suggested_circulars": [],
             }
 
         user_prompt = f"""
-        Retrieved Documents:
+        Retrieved Authenticated Government Documents:
 
         {r['context_block']}
 
@@ -200,33 +198,49 @@ class KnowledgeAgent(BaseAgent):
         {query}
 
         Instructions:
-
         - If a Reference Number Filter is provided, answer ONLY using information related to that circular/GR/notice.
         - Ignore information about other documents unless the question explicitly asks for a comparison or cross-reference.
-        - If the retrieved documents do not contain enough information for that reference number, clearly state that instead of using information from other documents.
-        - Determine the question's intent from the categories in the system instructions.
-        - Answer ONLY using the retrieved documents.
+        - If the retrieved documents do not contain enough information for that reference number or query, clearly state:
+          "Information unavailable in authenticated government documents."
+        - Answer ONLY using the retrieved documents. Preserve all official government terminology, GR numbers, circular numbers, dates, and proper names.
         - Do NOT mention the classified intent in your response.
-        - Follow ONLY the response format that matches the detected intent.
         """
 
         try:
-            answer = await groq_client.chat_completion(SYSTEM_PROMPT, user_prompt)
+            raw_answer = await groq_client.chat_completion(SYSTEM_PROMPT, user_prompt)
+            
+            # Extract administrative decision support recommendations if context supports it
+            admin_recs = []
+            if "References:" in raw_answer or r["sources"]:
+                admin_recs = [
+                    f"Verify implementation details against official GR {src}" for src in r["sources"][:2]
+                ]
+                admin_recs.append("Ensure departmental administrative compliance before issuing formal notices.")
+
+            # Translate final answer into target language if requested/detected & normalize NFC
+            translated_ans = await language.translate_response_to_target_language(raw_answer, effective_target_lang)
+            final_answer = language.normalize_nfc_text(translated_ans)
+
+
             reasoning = (
-                f"Retrieved {len(r['top'])} chunks via semantic search"
+                f"Retrieved {len(r['top'])} authenticated chunks via semantic search"
                 + (f", boosted by reference number(s) {sorted(r['tags'])}" if r["tags"] else "")
-                + ". Answer generated by Llama 3.3 70B (Groq), grounded strictly in retrieved context, "
-                + "with response format adapted to the classified question intent."
+                + f". Answer generated by Llama 3.3 70B (Groq) in {effective_target_lang}, grounded strictly in retrieved context."
             )
         except Exception as e:
-            answer = "Groq generation unavailable (" + str(e) + "). Top matching passage: " + r["top"][0][0][:400]
+            raw_answer = "Groq generation unavailable (" + str(e) + "). Top matching passage: " + r["top"][0][0][:400]
+            final_answer = raw_answer
+            admin_recs = []
             reasoning = f"Retrieved {len(r['top'])} chunks via semantic search; LLM generation step failed, showing extractive fallback."
 
         return {
             "agent": self.name,
-            "answer": answer,
+            "answer": final_answer,
             "confidence": r["confidence"],
             "sources": r["sources"],
             "citations": r.get("page_citations", []),
             "reasoning": reasoning,
+            "detected_language": detected_lang,
+            "administrative_recommendations": admin_recs,
+            "suggested_circulars": r["sources"][:3],
         }

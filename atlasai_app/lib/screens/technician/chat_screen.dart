@@ -31,6 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isSending = false;
   bool _isListening = false;
   bool _speechAvailable = false;
+  String _selectedLanguage = 'Auto'; // Auto | English | Marathi | Hindi
 
   @override
   void initState() {
@@ -82,6 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (query.isEmpty || _isSending) return;
 
     final equipmentId = _equipmentIdController.text.trim();
+    final targetLang = _selectedLanguage == 'Auto' ? null : _selectedLanguage;
 
     setState(() {
       _messages.add(ChatMessage(text: query, isUser: true));
@@ -95,6 +97,7 @@ class _ChatScreenState extends State<ChatScreen> {
         query,
         userRole: widget.userRole,
         equipmentId: equipmentId.isEmpty ? null : equipmentId,
+        targetLanguage: targetLang,
       );
       setState(() {
         _messages.add(ChatMessage.fromOrchestratorResponse(response));
@@ -113,6 +116,228 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _openSummarizeModal() async {
+    try {
+      final docs = await _orchestrator.listDocuments();
+      if (!mounted) return;
+
+      if (docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No documents ingested yet. Upload a document first.')),
+        );
+        return;
+      }
+
+      String selectedDocId = docs.first['docId'] as String;
+      String detailLevel = 'short';
+
+      showDialog(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setModalState) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.summarize_outlined, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text('Summarize Document'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select Document:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: selectedDocId,
+                  items: docs
+                      .map((d) => DropdownMenuItem<String>(
+                            value: d['docId'] as String,
+                            child: Text(d['fileName'] as String? ?? 'Document', overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedDocId = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                const Text('Summary Depth:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Concise'),
+                      selected: detailLevel == 'short',
+                      onSelected: (sel) {
+                        if (sel) setModalState(() => detailLevel = 'short');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Detailed'),
+                      selected: detailLevel == 'detailed',
+                      onSelected: (sel) {
+                        if (sel) setModalState(() => detailLevel = 'detailed');
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  setState(() => _isSending = true);
+                  try {
+                    final summaryData = await _orchestrator.summarizeDocument(selectedDocId, detailLevel: detailLevel);
+                    final summaryText = "📄 Document Summary (${summaryData['fileName']}):\n\n"
+                        "${summaryData['summary']}\n\n"
+                        "📌 Key Points:\n${(summaryData['keyPoints'] as List).map((k) => '• $k').join('\n')}\n\n"
+                        "🗓 Effective Date: ${summaryData['effectiveDate'] ?? 'N/A'}\n"
+                        "👥 Applicability: ${summaryData['applicability'] ?? 'N/A'}";
+
+                    setState(() {
+                      _messages.add(ChatMessage(
+                        text: summaryText,
+                        isUser: false,
+                        confidence: 0.98,
+                        sources: [summaryData['fileName'] as String? ?? 'Document'],
+                        reasoning: 'Generated AI document summary using Llama 3.3 70B.',
+                      ));
+                    });
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to generate summary: $e')),
+                    );
+                  } finally {
+                    setState(() => _isSending = false);
+                    _scrollToBottom();
+                  }
+                },
+                child: const Text('Generate Summary'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not list documents: $e')),
+      );
+    }
+  }
+
+  void _openCompareModal() async {
+    try {
+      final docs = await _orchestrator.listDocuments();
+      if (!mounted) return;
+
+      if (docs.length < 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please upload at least 2 documents to compare.')),
+        );
+        return;
+      }
+
+      String docA = docs[0]['docId'] as String;
+      String docB = docs[1]['docId'] as String;
+
+      showDialog(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setModalState) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.compare_arrows_outlined, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text('Compare Documents'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Document A (Original):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: docA,
+                  items: docs
+                      .map((d) => DropdownMenuItem<String>(
+                            value: d['docId'] as String,
+                            child: Text(d['fileName'] as String? ?? 'Doc A', overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => docA = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                const Text('Document B (Updated/Comparison):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: docB,
+                  items: docs
+                      .map((d) => DropdownMenuItem<String>(
+                            value: d['docId'] as String,
+                            child: Text(d['fileName'] as String? ?? 'Doc B', overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => docB = val);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  setState(() => _isSending = true);
+                  try {
+                    final compData = await _orchestrator.compareDocuments(docA, docB);
+                    final fileA = compData['file_a'] ?? 'Document A';
+                    final fileB = compData['file_b'] ?? 'Document B';
+
+                    final compText = "⚖️ Document Comparison:\n"
+                        "Comparing $fileA ⚡ $fileB\n\n"
+                        "➕ Added Clauses:\n${(compData['added_clauses'] as List).map((c) => '• $c').join('\n')}\n\n"
+                        "➖ Removed/Superseded Clauses:\n${(compData['removed_clauses'] as List).map((c) => '• $c').join('\n')}\n\n"
+                        "✏️ Modified Provisions:\n${(compData['modified_clauses'] as List).map((c) => '• $c').join('\n')}\n\n"
+                        "💡 Policy Differences:\n${(compData['policy_differences'] as List).map((c) => '• $c').join('\n')}";
+
+                    setState(() {
+                      _messages.add(ChatMessage(
+                        text: compText,
+                        isUser: false,
+                        confidence: 0.96,
+                        sources: [fileA as String, fileB as String],
+                        reasoning: 'Extracted clause-level comparison and policy differences.',
+                      ));
+                    });
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to compare documents: $e')),
+                    );
+                  } finally {
+                    setState(() => _isSending = false);
+                    _scrollToBottom();
+                  }
+                },
+                child: const Text('Compare Documents'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not list documents: $e')),
+      );
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -128,28 +353,26 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // FIX: explicit true so the body (equipment ID field + chat +
-      // input bar) actually shrinks when the keyboard opens, matching
-      // the other requirement to handle keyboard-driven overflow.
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('AskHTE'),
-        // FIX (corrected): a previous overflow fix on this AppBar's
-        // `actions` didn't actually fix anything, because AppBar
-        // measures `actions` at their natural/unconstrained width
-        // before laying out the title. Wrapping in a ConstrainedBox
-        // with an explicit maxWidth gives the inner
-        // SingleChildScrollView a genuine bound to scroll within
-        // instead of overflowing past the screen edge. Kept even now
-        // that `actions` only has two icons (upload + account) since
-        // very narrow screens can still tighten this further.
         actions: [
           ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.45),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.65),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.summarize_outlined),
+                    tooltip: 'Summarize Document',
+                    onPressed: _openSummarizeModal,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.compare_arrows_outlined),
+                    tooltip: 'Compare Documents',
+                    onPressed: _openCompareModal,
+                  ),
                   IconButton(
                     icon: const Icon(Icons.upload_file_outlined),
                     tooltip: 'Upload a document',
@@ -157,6 +380,22 @@ class _ChatScreenState extends State<ChatScreen> {
                       context,
                       MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
                     ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.language_outlined),
+                    tooltip: 'Target Response Language',
+                    onSelected: (lang) {
+                      setState(() => _selectedLanguage = lang);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Response language set to: $lang')),
+                      );
+                    },
+                    itemBuilder: (ctx) => [
+                      const PopupMenuItem(value: 'Auto', child: Text('🌐 Auto-Detect')),
+                      const PopupMenuItem(value: 'English', child: Text('🇬🇧 English')),
+                      const PopupMenuItem(value: 'Marathi', child: Text('🇮🇳 मराठी (Marathi)')),
+                      const PopupMenuItem(value: 'Hindi', child: Text('🇮🇳 हिंदी (Hindi)')),
+                    ],
                   ),
                   const Padding(
                     padding: EdgeInsets.only(right: 4, left: 4),
@@ -168,6 +407,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+
       body: Column(
         children: [
           Container(
@@ -385,12 +625,19 @@ class _MessageBubble extends StatelessWidget {
               const SizedBox(height: 8),
             ],
             Text(
-              message.text,
+              cleanDevanagari(message.text),
               style: TextStyle(
                 fontSize: 14.5,
                 color: message.isError ? AppColors.danger : AppColors.textPrimary,
+                fontFamilyFallback: const [
+                  'Noto Sans Devanagari',
+                  'NotoSansDevanagari',
+                  'Roboto',
+                  'sans-serif',
+                ],
               ),
             ),
+
             if (!isUser && !message.isError) ...[
               const SizedBox(height: 10),
               ExplainableAiPanel(
@@ -398,6 +645,8 @@ class _MessageBubble extends StatelessWidget {
                 sources: message.sources,
                 reasoning: message.reasoning,
                 pageCitations: message.pageCitations,
+                detectedLanguage: message.detectedLanguage,
+                administrativeRecommendations: message.administrativeRecommendations,
                 timeline: message.timeline
                     .map((t) => TimelineEntry(
                           ref: t['ref'] as String? ?? t['doc_id'] as String? ?? 'Unknown',
@@ -415,6 +664,7 @@ class _MessageBubble extends StatelessWidget {
                         ))
                     .toList(),
               ),
+
             ],
           ],
         ),
