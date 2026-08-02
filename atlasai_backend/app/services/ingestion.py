@@ -24,25 +24,24 @@ import gc
 
 def _ocr_image(img: Image.Image) -> str:
     try:
-        return pytesseract.image_to_string(img, lang=OCR_LANGS).strip()
-    except pytesseract.TesseractError as e:
-        print(
-            f"[ingestion] OCR lang='{OCR_LANGS}' failed ({e}); "
-            "falling back to English-only OCR. Check that "
-            "tesseract-ocr-mar/tesseract-ocr-hin are installed on this image.",
-            flush=True,
-        )
-        return pytesseract.image_to_string(img, lang="eng").strip()
+        return pytesseract.image_to_string(
+            img, lang=OCR_LANGS, config="--oem 3 --psm 6", timeout=4
+        ).strip()
+    except Exception as e:
+        print(f"[ingestion] OCR fallback/timeout ({e}), returning empty string.", flush=True)
+        return ""
 
 
 def extract_pages(file_bytes: bytes) -> List[str]:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
     pages_text = []
+    ocr_count = 0
     for page in doc:
         try:
             text = page.get_text("text").strip()
-            if len(text) < 20:
-                pix = page.get_pixmap(dpi=150)
+            if len(text) < 10 and ocr_count < 5:
+                ocr_count += 1
+                pix = page.get_pixmap(dpi=120)
                 img_bytes = pix.tobytes("png")
                 pix = None
                 img = Image.open(io.BytesIO(img_bytes))
@@ -55,6 +54,7 @@ def extract_pages(file_bytes: bytes) -> List[str]:
     doc.close()
     gc.collect()
     return pages_text
+
 
 
 
