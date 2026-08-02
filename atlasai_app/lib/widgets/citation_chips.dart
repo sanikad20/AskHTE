@@ -15,47 +15,55 @@ class CitationChips extends StatelessWidget {
       children: sources.asMap().entries.map((entry) {
         final i = entry.key + 1;
         final source = entry.value;
-        final displayName = source.length > 35 ? '${source.substring(0, 35)}…' : source;
+        final displayName = source.length > 22 ? '${source.substring(0, 22)}…' : source;
 
         return InkWell(
           onTap: () => _showSourceDetail(context, index: i, source: source),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
-                    shape: BoxShape.circle,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 56),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$i',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
                   ),
-                  child: Text(
-                    '$i',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.picture_as_pdf_outlined, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                const Icon(Icons.picture_as_pdf_outlined, size: 14, color: AppColors.primary),
-                const SizedBox(width: 4),
-                Text(
-                  displayName,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.open_in_new, size: 12, color: AppColors.primary),
-              ],
+                  const SizedBox(width: 4),
+                  const Icon(Icons.open_in_new, size: 12, color: AppColors.primary),
+                ],
+              ),
             ),
           ),
         );
       }).toList(),
     );
+
   }
 
   void _showSourceDetail(BuildContext context, {required int index, required String source}) {
