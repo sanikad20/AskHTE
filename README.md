@@ -252,6 +252,6 @@ Full interactive reference (request/response schemas, try-it-out): see the [Swag
 
 ---
 
-📄 License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
