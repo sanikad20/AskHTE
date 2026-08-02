@@ -19,7 +19,7 @@
 | 🌐 Live Backend (API) | [`https://askhte.onrender.com`](https://askhte.onrender.com) |
 | 📖 Interactive API Docs (Swagger) | [`https://askhte.onrender.com/docs`](https://askhte.onrender.com/docs) |
 | 💻 Source Code | `https://github.com/sanikad20/AskHTE` |
-| 🎥 Demo Video | `[Add your demo video URL]` |
+| 🎥 Demo Video | `https://drive.google.com/file/d/1IiXhdnmv3T9u4NDqybeeYfBO7apdhDEQ/view?usp=sharing` |
 | 📱 APK / TestFlight | `https://drive.google.com/file/d/1V2uC-aebp577sndkdBHUy0o8J5ZJjJ40/view?usp=sharing` |
 | 🏆 Hackathon | VJTI AI Hackathon 2026 — Problem Area 3 |
 
