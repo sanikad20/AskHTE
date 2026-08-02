@@ -1,6 +1,5 @@
 # 🏛️ AskHTE: AI-Powered Question Answering System
-> **Department of Higher & Technical Education (HTE), Government of Maharashtra**  
-
+> **Department of Higher & Technical Education (HTE), Government of Maharashtra**
 
 > *"Ask Official Documents. Get Cited, Trusted Answers."*
 
@@ -9,6 +8,37 @@
 [![ChromaDB](https://img.shields.io/badge/Vector_DB-ChromaDB-FF6F00)](https://www.trychroma.com)
 [![SentenceTransformers](https://img.shields.io/badge/Embeddings-Local_MiniLM_L6-blue)](https://www.sbert.net)
 [![Groq LLM](https://img.shields.io/badge/LLM-Llama_3.3_70B_Groq-f50057)](https://groq.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## 🔗 Quick Links
+
+| Resource | Link |
+|---|---|
+| 🌐 Live Backend (API) | [`https://askhte.onrender.com`](https://askhte.onrender.com) |
+| 📖 Interactive API Docs (Swagger) | [`https://askhte.onrender.com/docs`](https://askhte.onrender.com/docs) |
+| 💻 Source Code | `https://github.com/sanikad20/AskHTE` |
+| 🎥 Demo Video | `[Add your demo video URL]` |
+| 📱 APK / TestFlight | `https://drive.google.com/file/d/1V2uC-aebp577sndkdBHUy0o8J5ZJjJ40/view?usp=sharing` |
+| 🏆 Hackathon | VJTI AI Hackathon 2026 — Problem Area 3 |
+
+> Note: the backend is on Render's free tier — the first request after a
+> period of inactivity can take 30-60s to respond while the instance
+> spins back up. This is expected, not a bug, if you're trying the live
+> link cold.
+
+---
+
+## 👥 Team
+
+| Role | Name | GitHub |
+|------|------|--------|
+| Team Lead | Sanika Deshmukh | [@sanikad20](https://github.com/sanikad20) |
+| Team Member | Pragati Kharat | [@pragatikharat17](https://github.com/pragatikharat17) |
+| Team Member | Divya Addagatla | [@adivya15](https://github.com/adivya15) |
+
+**Institute:** Veermata Jijabai Technological Institute (VJTI), Mumbai
 
 ---
 
@@ -208,6 +238,9 @@ docker run -d -p 8000:8000 -e GROQ_API_KEY="your_groq_api_key" askhte-backend
 | `/documents/list` | `GET` | Returns list of all ingested government circulars and metadata. |
 | `/documents/summarize` | `POST` | Generates a structured executive summary of a specified document. |
 | `/documents/compare` | `GET` | Compares two circulars side-by-side highlighting added, removed, and modified clauses. |
+| `/documents/graph` | `GET` | Returns the relationship graph, amendment timeline, and detected conflicts across ingested documents. |
+
+Full interactive reference (request/response schemas, try-it-out): see the [Swagger docs](https://askhte.onrender.com/docs) link above.
 
 ---
 
@@ -219,5 +252,6 @@ docker run -d -p 8000:8000 -e GROQ_API_KEY="your_groq_api_key" askhte-backend
 
 ---
 
-## 📄 License
+📄 License
+
 This project is licensed under the MIT License - see the LICENSE file for details.
