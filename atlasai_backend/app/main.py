@@ -160,6 +160,10 @@ async def ingest(
     if ids:
         vectors = await embeddings.embed_batch(docs)
         collection.add(ids=ids, documents=docs, metadatas=metadatas, embeddings=vectors)
+        del ids, docs, metadatas, vectors
+        import gc
+        gc.collect()
+
 
     # Day 5: opt-in push alert if this incident matched historical patterns.
     alert_sent = False

@@ -55,11 +55,16 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
         _result = result;
       });
     } catch (e) {
+      final errStr = e.toString();
+      final userMessage = (errStr.contains('ClientException') || errStr.contains('Connection closed'))
+          ? 'Server memory limit reached or connection timed out during ingestion. Please tap to try uploading again.'
+          : errStr;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = userMessage;
       });
     }
+
   }
 
   @override

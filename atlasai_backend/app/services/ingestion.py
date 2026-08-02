@@ -19,6 +19,9 @@ import io
 OCR_LANGS = "eng+mar+hin"
 
 
+import gc
+
+
 def _ocr_image(img: Image.Image) -> str:
     try:
         return pytesseract.image_to_string(img, lang=OCR_LANGS).strip()
@@ -36,14 +39,23 @@ def extract_pages(file_bytes: bytes) -> List[str]:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
     pages_text = []
     for page in doc:
-        text = page.get_text("text").strip()
-        if len(text) < 20:
-            pix = page.get_pixmap(dpi=200)
-            img = Image.open(io.BytesIO(pix.tobytes("png")))
-            text = _ocr_image(img)
-        pages_text.append(text)
+        try:
+            text = page.get_text("text").strip()
+            if len(text) < 20:
+                pix = page.get_pixmap(dpi=150)
+                img_bytes = pix.tobytes("png")
+                pix = None
+                img = Image.open(io.BytesIO(img_bytes))
+                text = _ocr_image(img)
+                img.close()
+            pages_text.append(text)
+        except Exception as e:
+            print(f"[ingestion] Page extraction warning: {e}", flush=True)
+            pages_text.append("")
     doc.close()
+    gc.collect()
     return pages_text
+
 
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:
