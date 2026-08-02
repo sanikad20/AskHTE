@@ -232,12 +232,26 @@ async def list_documents():
 async def summarize_doc(payload: DocumentSummaryRequest):
     """Generates a concise or detailed summary of an ingested government document."""
     docs_by_id = {d["doc_id"]: d for d in document_store.all_documents()}
-    if payload.doc_id not in docs_by_id:
-        raise HTTPException(404, f"Document {payload.doc_id} not found in store.")
-    
-    doc = docs_by_id[payload.doc_id]
+    doc = docs_by_id.get(payload.doc_id)
+
+    if not doc:
+        collection = get_documents_collection()
+        results = collection.get(where={"doc_id": payload.doc_id}, include=["documents", "metadatas"])
+        if results and results.get("documents"):
+            chunks = results["documents"]
+            metas = results.get("metadatas", [{}])
+            file_name = metas[0].get("file_name", "Government Document") if metas else "Government Document"
+            doc = {
+                "doc_id": payload.doc_id,
+                "file_name": file_name,
+                "full_text": "\n".join(chunks),
+            }
+        else:
+            raise HTTPException(404, f"Document {payload.doc_id} not found in store or vector database.")
+
     result = await document_relationships.summarize_document(doc, detail_level=payload.detail_level or "short")
     return DocumentSummaryResponse(**result)
+
 
 
 @app.get("/documents/compare", response_model=DocumentCompareResponse)

@@ -160,7 +160,13 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Icon(Icons.summarize, color: AppColors.primary),
                 SizedBox(width: 8),
-                Text('Summarize Government Circular'),
+                Expanded(
+                  child: Text(
+                    'Summarize Government Circular',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             content: Column(
@@ -182,21 +188,39 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 14),
                 const Text('Summary Depth:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                Row(
+                const SizedBox(height: 4),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
                   children: [
-                    Radio<String>(
-                      value: 'short',
-                      groupValue: detailLevel,
-                      onChanged: (v) => setDialogState(() => detailLevel = v!),
+                    InkWell(
+                      onTap: () => setDialogState(() => detailLevel = 'short'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<String>(
+                            value: 'short',
+                            groupValue: detailLevel,
+                            onChanged: (v) => setDialogState(() => detailLevel = v!),
+                          ),
+                          const Text('Concise (Short)', style: TextStyle(fontSize: 12.5)),
+                        ],
+                      ),
                     ),
-                    const Text('Concise (Short)'),
-                    const SizedBox(width: 12),
-                    Radio<String>(
-                      value: 'detailed',
-                      groupValue: detailLevel,
-                      onChanged: (v) => setDialogState(() => detailLevel = v!),
+                    InkWell(
+                      onTap: () => setDialogState(() => detailLevel = 'detailed'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<String>(
+                            value: 'detailed',
+                            groupValue: detailLevel,
+                            onChanged: (v) => setDialogState(() => detailLevel = v!),
+                          ),
+                          const Text('Detailed', style: TextStyle(fontSize: 12.5)),
+                        ],
+                      ),
                     ),
-                    const Text('Detailed'),
                   ],
                 ),
               ],
@@ -213,6 +237,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: const Text('Generate Summary'),
               ),
             ],
+
           ),
         ),
       );
@@ -319,7 +344,13 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Icon(Icons.compare_arrows, color: AppColors.accent),
                 SizedBox(width: 8),
-                Text('Compare Circulars / GRs'),
+                Expanded(
+                  child: Text(
+                    'Compare Circulars / GRs',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             content: Column(
@@ -380,6 +411,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
       setState(() => _isSending = false);
 
+      final nameA = comp['file_a'] ?? comp['fileA'] ?? comp['doc_a'] ?? comp['docA'] ?? 'Document A';
+      final nameB = comp['file_b'] ?? comp['fileB'] ?? comp['doc_b'] ?? comp['docB'] ?? 'Document B';
+
+      final addedList = List<String>.from(comp['added_clauses'] ?? comp['addedClauses'] ?? []);
+      final removedList = List<String>.from(comp['removed_clauses'] ?? comp['removedClauses'] ?? []);
+      final modifiedList = List<String>.from(comp['modified_clauses'] ?? comp['modifiedClauses'] ?? []);
+      final policyList = List<String>.from(comp['policy_differences'] ?? comp['policyDifferences'] ?? []);
+
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -393,7 +432,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               Text('Document Clause Comparison', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text('${comp['fileA']} vs ${comp['fileB']}', style: const TextStyle(color: AppColors.textFaint, fontSize: 13)),
+              Text('$nameA vs $nameB', style: const TextStyle(color: AppColors.textFaint, fontSize: 13)),
               const SizedBox(height: 16),
 
               // Green Added Clauses
@@ -401,7 +440,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: '➕ Added Clauses',
                 color: const Color(0xFF10B981),
                 bgColor: const Color(0xFFECFDF5),
-                items: List<String>.from(comp['addedClauses'] ?? []),
+                items: addedList,
               ),
               const SizedBox(height: 12),
 
@@ -410,7 +449,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: '➖ Removed / Superseded Clauses',
                 color: const Color(0xFFEF4444),
                 bgColor: const Color(0xFFFEF2F2),
-                items: List<String>.from(comp['removedClauses'] ?? []),
+                items: removedList,
               ),
               const SizedBox(height: 12),
 
@@ -419,7 +458,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: '✏️ Modified Provisions',
                 color: const Color(0xFFD97706),
                 bgColor: const Color(0xFFFFFBEB),
-                items: List<String>.from(comp['modifiedClauses'] ?? []),
+                items: modifiedList,
               ),
               const SizedBox(height: 12),
 
@@ -428,9 +467,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: '💡 Administrative Policy Differences',
                 color: AppColors.accent,
                 bgColor: AppColors.accent.withOpacity(0.06),
-                items: List<String>.from(comp['policyDifferences'] ?? []),
+                items: policyList,
               ),
             ],
+
           ),
         ),
       );
@@ -901,12 +941,17 @@ class _DiffSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final effectiveBg = isDark ? color.withOpacity(0.12) : bgColor;
+    final effectiveTextColor = isDark ? Colors.white.withOpacity(0.92) : const Color(0xFF1E293B);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: effectiveBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withOpacity(isDark ? 0.4 : 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -920,7 +965,16 @@ class _DiffSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('• ', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-                  Expanded(child: Text(cleanDevanagari(item), style: const TextStyle(fontSize: 13, height: 1.35))),
+                  Expanded(
+                    child: Text(
+                      cleanDevanagari(item),
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.35,
+                        color: effectiveTextColor,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

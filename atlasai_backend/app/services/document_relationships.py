@@ -453,47 +453,61 @@ AUTHORITY: <department/authority name>
         authority = None
         
         current_sec = None
-        for line in raw.splitlines():
+        cleaned_raw = re.sub(r"\*\*|#+", "", raw)
+        current_sec = None
+        for line in cleaned_raw.splitlines():
             line_str = line.strip()
-            if line_str.startswith("SUMMARY:"):
-                summary_text = line_str.replace("SUMMARY:", "").strip()
+            if not line_str:
+                continue
+            line_upper = line_str.upper()
+            if "SUMMARY:" in line_upper or "EXECUTIVE SUMMARY" in line_upper:
+                summary_text = re.sub(r"(?i)(?:executive\s*)?summary:?", "", line_str).strip()
                 current_sec = "summary"
-            elif line_str.startswith("KEY POINTS:"):
+            elif "KEY POINTS:" in line_upper or "BULLET POINTS:" in line_upper:
                 current_sec = "key_points"
-            elif line_str.startswith("EFFECTIVE DATE:"):
-                effective_date = line_str.replace("EFFECTIVE DATE:", "").strip()
+            elif "EFFECTIVE DATE:" in line_upper:
+                effective_date = re.sub(r"(?i)effective\s*date:?", "", line_str).strip()
                 current_sec = None
-            elif line_str.startswith("APPLICABILITY:"):
-                applicability = line_str.replace("APPLICABILITY:", "").strip()
+            elif "APPLICABILITY:" in line_upper:
+                applicability = re.sub(r"(?i)applicability:?", "", line_str).strip()
                 current_sec = None
-            elif line_str.startswith("AUTHORITY:"):
-                authority = line_str.replace("AUTHORITY:", "").strip()
+            elif "AUTHORITY:" in line_upper:
+                authority = re.sub(r"(?i)authority:?", "", line_str).strip()
                 current_sec = None
-            elif line_str.startswith("-") and current_sec == "key_points":
-                key_points.append(line_str.lstrip("- ").strip())
-            elif current_sec == "summary" and line_str:
+            elif (line_str.startswith("-") or line_str.startswith("*") or line_str.startswith("•")) and current_sec == "key_points":
+                key_points.append(line_str.lstrip("-*• ").strip())
+            elif current_sec == "summary":
                 summary_text += " " + line_str
-                
+
+        if not summary_text:
+            non_bullet_lines = [l.strip() for l in cleaned_raw.splitlines() if l.strip() and not re.match(r"^[-*•]", l.strip())]
+            summary_text = " ".join(non_bullet_lines[:3]) if non_bullet_lines else f"Summary of {file_name}: Official government circular detailing administrative procedures."
+
         return {
             "docId": doc["doc_id"],
             "fileName": file_name,
             "summaryType": detail_level,
-            "summary": summary_text or f"Summary for {file_name}",
+            "summary": summary_text,
             "keyPoints": key_points or ["Official circular regulations", "Departmental policy framework"],
             "effectiveDate": effective_date or doc.get("date", "Not specified"),
             "applicability": applicability or "Higher & Technical Education Institutions",
             "authority": authority or "HTE Department, Government of Maharashtra",
         }
+
     except Exception as e:
-        print(f"[document_relationships] LLM summarize failed: {e}", flush=True)
+        print(f"[document_relationships] LLM summarize failed ({e}), extracting text summary...", flush=True)
+        sentences = [s.strip() for s in re.split(r"[.\n]", text) if len(s.strip()) > 15]
+        extracted_summary = " ".join(sentences[:4]) if sentences else f"Summary of {file_name}: Official government circular detailing administrative procedures and directives."
+        bullet_points = [f"Provision: {s}" for s in sentences[4:8]] if len(sentences) > 4 else ["Official circular regulations", "Departmental policy framework"]
         return {
             "docId": doc["doc_id"],
             "fileName": file_name,
             "summaryType": detail_level,
-            "summary": f"Summary of {file_name}: Authenticated government circular detailing administrative procedures and department directives.",
-            "keyPoints": ["Official circular regulations", "Departmental policy framework"],
+            "summary": extracted_summary,
+            "keyPoints": bullet_points,
             "effectiveDate": doc.get("date", "Not specified"),
             "applicability": "Higher & Technical Education Institutions",
             "authority": "HTE Department, Government of Maharashtra",
         }
+
 
