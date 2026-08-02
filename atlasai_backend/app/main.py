@@ -157,13 +157,13 @@ async def ingest(
                 "doc_type": doc_type,
             })
 
+    chunk_count = len(ids)
     if ids:
         vectors = await embeddings.embed_batch(docs)
         collection.add(ids=ids, documents=docs, metadatas=metadatas, embeddings=vectors)
         del ids, docs, metadatas, vectors
         import gc
         gc.collect()
-
 
     # Day 5: opt-in push alert if this incident matched historical patterns.
     alert_sent = False
@@ -178,9 +178,10 @@ async def ingest(
     return IngestResponse(
         docId=doc_id,
         fileName=file.filename,
-        status="ingested" if ids else "failed",
+        status="ingested" if chunk_count > 0 else "failed",
         pageCount=len(pages),
-        chunkCount=len(ids),
+        chunkCount=chunk_count,
+
         equipmentTags=equipment_tags,
         graphEdges=graph_edges,
         personnel=entities["personnel"],
