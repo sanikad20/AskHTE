@@ -21,11 +21,12 @@ class _AskHTEHomeScreenState extends State<AskHTEHomeScreen> {
   bool _loadingDocs = false;
 
   final List<String> _recentQueries = [
-    'What is the last date for CAP Round 1 engineering admission?',
-    'What are the eligibility criteria for the EBC fee waiver scheme?',
-    'Summarize the latest circular regarding professor recruitment guidelines.',
-    'Compare Circular 2024/12 with Circular 2026/04 on scholarship policy.',
+    '📄 What is this Government Resolution about?',
+    '📝 Summarize this document.',
+    '👥 Who is eligible under this scheme?',
+    '📚 What are the key decisions in this GR?',
   ];
+
 
   @override
   void initState() {
