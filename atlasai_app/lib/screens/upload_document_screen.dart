@@ -56,14 +56,20 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
       });
     } catch (e) {
       final errStr = e.toString();
-      final userMessage = (errStr.contains('ClientException') || errStr.contains('Connection closed'))
-          ? 'Server memory limit reached or connection timed out during ingestion. Please tap to try uploading again.'
-          : errStr;
+      final String userMessage;
+      if (errStr.contains('502') || errStr.contains('DOCTYPE') || errStr.contains('html')) {
+        userMessage = 'Render free-tier 60-second gateway timeout reached. Please upload a smaller or text-based PDF circular.';
+      } else if (errStr.contains('ClientException') || errStr.contains('Connection closed')) {
+        userMessage = 'Server memory limit reached or connection timed out during ingestion. Please tap to try uploading again.';
+      } else {
+        userMessage = errStr;
+      }
       setState(() {
         _loading = false;
         _error = userMessage;
       });
     }
+
 
   }
 
