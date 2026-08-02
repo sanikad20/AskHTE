@@ -1,33 +1,45 @@
 import 'package:flutter/material.dart';
 
-/// Shared design tokens. Extracted out of main.dart's old inline
-/// ThemeData so every screen (Day 4 auth, Day 5 chat/timeline/capture)
-/// can reference the same palette/spacing instead of hardcoding values.
-///
-/// Colors are built around the same seed main.dart used before this
-/// file existed (0xFF1F4E5F — a dark industrial teal), so switching to
-/// AppTheme.light() doesn't visually change anything already shipped.
+/// AskHTE Modern Government AI Assistant Palette & Tokens
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF1F4E5F);
-  static const Color background = Color(0xFFF5F7F8);
+  // Core Brand Colors
+  static const Color primary = Color(0xFF0F766E); // Deep Teal
+  static const Color primaryLight = Color(0xFF14B8A6);
+  static const Color secondary = Color(0xFF10B981); // Emerald
+  static const Color accent = Color(0xFF4F46E5); // Indigo
+  static const Color accentLight = Color(0xFF6366F1);
+
+  // Light Theme Surfaces
+  static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFEDF1F2);
-  static const Color border = Color(0xFFDCE3E5);
+  static const Color surfaceMuted = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFE2E8F0);
 
-  static const Color textPrimary = Color(0xFF1A2327);
-  static const Color textSecondary = Color(0xFF5B6B70);
-  static const Color textFaint = Color(0xFF8C9A9E);
+  // Dark Theme Surfaces
+  static const Color darkBackground = Color(0xFF0F172A);
+  static const Color darkSurface = Color(0xFF1E293B);
+  static const Color darkSurfaceMuted = Color(0xFF334155);
+  static const Color darkBorder = Color(0xFF475569);
 
-  static const Color success = Color(0xFF2E7D32);
-  static const Color successBg = Color(0xFFE6F4E8);
+  // Text Colors
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF475569);
+  static const Color textFaint = Color(0xFF94A3B8);
 
-  static const Color warning = Color(0xFFB8720A);
-  static const Color warningBg = Color(0xFFFCF0DC);
+  static const Color darkTextPrimary = Color(0xFFF8FAFC);
+  static const Color darkTextSecondary = Color(0xFF94A3B8);
 
-  static const Color danger = Color(0xFFC62828);
-  static const Color dangerBg = Color(0xFFFBE7E7);
+  // Status Colors
+  static const Color success = Color(0xFF10B981);
+  static const Color successBg = Color(0xFFECFDF5);
+
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color warningBg = Color(0xFFFFFBEB);
+
+  static const Color danger = Color(0xFFEF4444);
+  static const Color dangerBg = Color(0xFFFEF2F2);
 }
 
 class AppSpacing {
@@ -43,9 +55,10 @@ class AppSpacing {
 class AppRadius {
   AppRadius._();
 
-  static const double sm = 6;
-  static const double md = 10;
-  static const double lg = 16;
+  static const double sm = 8;
+  static const double md = 14;
+  static const double lg = 18;
+  static const double xl = 24;
   static const double pill = 999;
 }
 
@@ -61,40 +74,130 @@ String cleanDevanagari(String text) {
 class AppTheme {
   AppTheme._();
 
+  static const List<String> devanagariFontFallback = [
+    'Noto Sans Devanagari',
+    'NotoSansDevanagari',
+    'Roboto',
+    'sans-serif',
+  ];
+
   static ThemeData light() {
     final baseTheme = ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       colorSchemeSeed: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        centerTitle: false,
         surfaceTintColor: Colors.transparent,
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: const BorderSide(color: AppColors.border, width: 1),
         ),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
+      inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceMuted,
-        border: OutlineInputBorder(borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.border, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
       ),
     );
 
-    // Apply Devanagari font fallback to all text styles
     final textTheme = baseTheme.textTheme.apply(
-      fontFamilyFallback: const [
-        'Noto Sans Devanagari',
-        'NotoSansDevanagari',
-        'Roboto',
-        'sans-serif',
-      ],
+      fontFamilyFallback: devanagariFontFallback,
+      bodyColor: AppColors.textPrimary,
+      displayColor: AppColors.textPrimary,
+    );
+
+    return baseTheme.copyWith(textTheme: textTheme);
+  }
+
+  static ThemeData dark() {
+    final baseTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorSchemeSeed: AppColors.primaryLight,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: AppColors.darkTextPrimary,
+        elevation: 0,
+        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.darkSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: const BorderSide(color: AppColors.darkBorder, width: 1),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.darkSurfaceMuted,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.darkBorder, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.primaryLight, width: 1.5),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryLight,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ),
+    );
+
+    final textTheme = baseTheme.textTheme.apply(
+      fontFamilyFallback: devanagariFontFallback,
+      bodyColor: AppColors.darkTextPrimary,
+      displayColor: AppColors.darkTextPrimary,
     );
 
     return baseTheme.copyWith(textTheme: textTheme);

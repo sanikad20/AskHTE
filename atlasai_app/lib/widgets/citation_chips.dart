@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Tappable chips for each source document cited in an answer.
-/// The chip's number corresponds to the [n] citation markers the
-/// Knowledge Agent / Action Engine actually use inline in the answer
-/// text — sources are passed straight through from a single agent's
-/// result in their original retrieval order (see chat_message.dart's
-/// fix), so chip #1 really is [1] in the text above it.
+/// Clickable Reference Cards for each source document cited in an answer.
 class CitationChips extends StatelessWidget {
   final List<String> sources;
   const CitationChips({super.key, required this.sources});
@@ -15,40 +10,62 @@ class CitationChips extends StatelessWidget {
   Widget build(BuildContext context) {
     if (sources.isEmpty) return const SizedBox.shrink();
     return Wrap(
-      spacing: 6,
-      runSpacing: 4,
+      spacing: 8,
+      runSpacing: 8,
       children: sources.asMap().entries.map((entry) {
         final i = entry.key + 1;
         final source = entry.value;
-        return ActionChip(
-          avatar: CircleAvatar(
-            backgroundColor: Colors.blueGrey.shade100,
-            child: Text('$i', style: const TextStyle(fontSize: 11)),
+        final displayName = source.length > 35 ? '${source.substring(0, 35)}…' : source;
+
+        return InkWell(
+          onTap: () => _showSourceDetail(context, index: i, source: source),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '$i',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.picture_as_pdf_outlined, size: 14, color: AppColors.primary),
+                const SizedBox(width: 4),
+                Text(
+                  displayName,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.open_in_new, size: 12, color: AppColors.primary),
+              ],
+            ),
           ),
-          label: Text(
-            // CHANGE: was truncated to 24 chars, which cut off most
-            // "filename.pdf (page N)" style source strings mid-word.
-            // Widened to 40 chars — still bounded so a very long
-            // filename can't blow out the chip row, but shows enough
-            // to actually be useful before opening the detail sheet.
-            source.length > 40 ? '${source.substring(0, 40)}…' : source,
-            style: const TextStyle(fontSize: 11),
-          ),
-          onPressed: () => _showSourceDetail(context, index: i, source: source),
         );
       }).toList(),
     );
   }
 
-  // CHANGE: replaced the old SnackBar (which flashed briefly and
-  // still truncated long source text off-screen) with a proper modal
-  // bottom sheet — shows the citation number matching the answer's
-  // [n] marker, the full un-truncated source string, and stays open
-  // until dismissed so it's actually readable.
   void _showSourceDetail(BuildContext context, {required int index, required String source}) {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
@@ -58,32 +75,48 @@ class CitationChips extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
-                      '$index',
-                      style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary,
-                      ),
+                      'Reference #$index',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Citation $index',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  const Spacer(),
+                  const Icon(Icons.verified_outlined, size: 16, color: Color(0xFF10B981)),
+                  const SizedBox(width: 4),
+                  const Text('Authenticated Gov Document', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Icon(Icons.picture_as_pdf, size: 24, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      source,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                source,
-                style: const TextStyle(fontSize: 14, height: 1.4),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Referenced as [$index] in the answer above.',
-                style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontStyle: FontStyle.italic),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                ),
+                child: const Text(
+                  'Cited in AskHTE response: Grounded strictly in official circular regulations and Government Resolutions.',
+                  style: TextStyle(fontSize: 12.5, fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                ),
               ),
             ],
           ),

@@ -14,9 +14,6 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Day 5: must be registered before runApp — this is what lets FCM
-  // wake a background isolate to show a system notification when the
-  // app isn't in the foreground.
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(const AtlasAIApp());
@@ -33,18 +30,17 @@ class _AtlasAIAppState extends State<AtlasAIApp> {
   @override
   void initState() {
     super.initState();
-    // Fire-and-forget: subscribes to the 'lessons_learned' topic and
-    // requests notification permission. Doesn't block first frame —
-    // permission prompts feel better after the UI is already visible.
     FcmService().init(rootMessengerKey);
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AskHTE',
+      title: 'AskHTE — Government AI Assistant',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       scaffoldMessengerKey: rootMessengerKey,
       home: const AuthGate(),
     );

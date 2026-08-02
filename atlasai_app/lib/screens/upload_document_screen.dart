@@ -1,26 +1,23 @@
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 
 class UploadDocumentScreen extends StatefulWidget {
   const UploadDocumentScreen({super.key});
 
   @override
-  State<UploadDocumentScreen> createState() =>
-      _UploadDocumentScreenState();
+  State<UploadDocumentScreen> createState() => _UploadDocumentScreenState();
 }
 
-class _UploadDocumentScreenState
-    extends State<UploadDocumentScreen> {
+class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
   final StorageService _storageService = StorageService();
-  final TextEditingController _equipmentController =
-      TextEditingController();
+  final TextEditingController _equipmentController = TextEditingController();
 
   bool _loading = false;
   String? _fileName;
+  int? _fileSize;
   Map<String, dynamic>? _result;
   String? _error;
 
@@ -41,6 +38,7 @@ class _UploadDocumentScreenState
       _error = null;
       _result = null;
       _fileName = picked.files.single.name;
+      _fileSize = picked.files.single.size;
     });
 
     try {
@@ -70,89 +68,217 @@ class _UploadDocumentScreenState
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Upload Document"),
+        title: const Text('Ingest Government Document'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _equipmentController,
-              decoration: const InputDecoration(
-                labelText: "Reference No. (Optional)",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _loading ? null : _pickAndUpload,
-              icon: const Icon(Icons.upload_file),
-              label: const Text("Pick PDF & Upload"),
-            ),
-            const SizedBox(height: 25),
-            if (_loading) ...[
-              const CircularProgressIndicator(),
-              const SizedBox(height: 12),
-              Text("Uploading $_fileName ..."),
-            ],
-            if (_error != null)
-              Card(
-                color: Colors.red.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Modern Header Card
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.15)),
                   ),
-                ),
-              ),
-            if (_result != null)
-              Card(
-                color: Colors.green.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                  child: const Row(
                     children: [
-                      const Text(
-                        "Upload Successful ✅",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.green,
+                      Icon(Icons.verified_user, color: AppColors.primary, size: 28),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Authenticated Ingestion Engine',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            Text(
+                              'PDF documents are chunked, embedded, and indexed into ChromaDB for grounded RAG QA.',
+                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text("File: $_fileName"),
-                      Text("Status: ${_result!['status']}"),
-                      Text("Pages: ${_result!['pageCount']}"),
-                      Text("Chunks: ${_result!['chunkCount']}"),
-                      Text("Document ID: ${_result!['docId']}"),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Reference Numbers",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Wrap(
-                        spacing: 8,
-                        children: List<String>.from(
-                          _result!['equipmentTags'] ?? [],
-                        )
-                            .map((e) => Chip(label: Text(e)))
-                            .toList(),
                       ),
                     ],
                   ),
                 ),
-              ),
-          ],
+                const SizedBox(height: AppSpacing.lg),
+
+                // Optional Reference ID input
+                TextField(
+                  controller: _equipmentController,
+                  decoration: const InputDecoration(
+                    labelText: 'Government Resolution / Circular No. (Optional)',
+                    hintText: 'e.g. GR-2026/HTE-89',
+                    prefixIcon: Icon(Icons.pin_outlined, color: AppColors.primary),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Drag & Drop Upload Zone Card
+                InkWell(
+                  onTap: _loading ? null : _pickAndUpload,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.4),
+                        width: 1.8,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.cloud_upload_outlined, size: 42, color: AppColors.primary),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Tap to select PDF Government Document',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Supports official GRs, Notices, & Circular PDFs',
+                          style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // Loading State with Shimmer
+                if (_loading) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        const LinearProgressIndicator(color: AppColors.primary),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.picture_as_pdf, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _fileName ?? 'Uploading...',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                            if (_fileSize != null)
+                              Text(
+                                '${(_fileSize! / 1024).toStringAsFixed(1)} KB',
+                                style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Error Card
+                if (_error != null) ...[
+                  Card(
+                    color: AppColors.dangerBg,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: AppColors.danger),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Success Result Card
+                if (_result != null) ...[
+                  Card(
+                    color: AppColors.successBg,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      side: const BorderSide(color: AppColors.success, width: 1),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.check_circle, color: AppColors.success, size: 22),
+                              SizedBox(width: 8),
+                              Text(
+                                'Ingestion Complete! 🔒',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.success),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text('File Name: $_fileName', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          Text('Document ID: ${_result!['docId']}', style: const TextStyle(fontSize: 12.5)),
+                          Text('Pages Processed: ${_result!['pageCount']}', style: const TextStyle(fontSize: 12.5)),
+                          Text('Vector Chunks Created: ${_result!['chunkCount']}', style: const TextStyle(fontSize: 12.5)),
+                          const SizedBox(height: 12),
+                          if ((_result!['equipmentTags'] as List? ?? []).isNotEmpty) ...[
+                            const Text('Extracted Reference Tags:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 6,
+                              children: List<String>.from(_result!['equipmentTags'])
+                                  .map((tag) => Chip(
+                                        label: Text(tag, style: const TextStyle(fontSize: 11)),
+                                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

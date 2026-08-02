@@ -5,23 +5,7 @@ import 'citation_chips.dart';
 import 'page_citation_chips.dart';
 import 'relationship_timeline_card.dart';
 
-/// The "Explainable AI panel" shown under every AskHTE answer —
-/// confidence score, source citations, reasoning trace, and (new)
-/// the amendment timeline / conflict list for that answer.
-///
-/// CHANGE: previously chat_screen.dart rendered this panel and then,
-/// separately, a standalone RelationshipTimelineCard below it when a
-/// message carried timeline/conflict data — two disconnected widgets
-/// that didn't read as one system. Feedback on the v4 build was that
-/// a plain chat UI doesn't make the document-intelligence work (entity
-/// extraction, relationship graph, conflict detection) visible enough
-/// to a judge glancing at the screen — it's real, but buried. This
-/// merges everything into one panel with explicit, icon-labeled
-/// sections (📄 Sources / 🕒 Timeline / ⚠️ Conflicts) so a judge sees
-/// at a glance that this is more than retrieval + an LLM call, without
-/// needing to expand anything — everything here stays visible by
-/// default rather than collapsed behind a tap, since the point is
-/// demo visibility, not decluttering.
+/// Redesigned AI Response Panel for AskHTE
 class ExplainableAiPanel extends StatelessWidget {
   final double confidence;
   final List<String> sources;
@@ -48,6 +32,10 @@ class ExplainableAiPanel extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
         child: Column(
@@ -56,7 +44,7 @@ class ExplainableAiPanel extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.verified_outlined, size: 18, color: AppColors.primary),
+                const Icon(Icons.picture_as_pdf, size: 22, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -68,18 +56,19 @@ class ExplainableAiPanel extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(8),
+                color: const Color(0xFF10B981).withOpacity(0.08),
+                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline, size: 14, color: AppColors.primary),
+                  const Icon(Icons.lock_outline, size: 14, color: Color(0xFF10B981)),
                   const SizedBox(width: 6),
                   Text(
                     'Authenticated Government Document — ${citation.page != null ? "Page ${citation.page}" : "Full Document"}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                   ),
                 ],
               ),
@@ -102,69 +91,85 @@ class ExplainableAiPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Badges Bar: Verified Source + RAG Powered + Confidence + Language
+        // Premium Bottom Chips Bar: Verified Source + RAG Powered + Confidence + Language + Circular
         Wrap(
           spacing: 6,
-          runSpacing: 4,
+          runSpacing: 6,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             ConfidenceBadge(confidence: confidence),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withOpacity(0.1),
                 border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.verified_user_outlined, size: 11, color: Color(0xFF10B981)),
-                  SizedBox(width: 3),
-                  Text('Verified Source', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                  Icon(Icons.verified, size: 12, color: Color(0xFF10B981)),
+                  SizedBox(width: 4),
+                  Text('Verified Source', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                 ],
               ),
             ),
-
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.1),
                 border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.bolt, size: 11, color: AppColors.primary),
-                  SizedBox(width: 2),
-                  Text('RAG Powered', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  Icon(Icons.bolt, size: 12, color: AppColors.primary),
+                  SizedBox(width: 3),
+                  Text('RAG Powered', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.surfaceMuted,
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.accent.withOpacity(0.1),
+                border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.language, size: 11, color: AppColors.textSecondary),
-                  const SizedBox(width: 3),
-                  Text(detectedLanguage, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  const Icon(Icons.language, size: 12, color: AppColors.accent),
+                  const SizedBox(width: 4),
+                  Text(detectedLanguage, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.withOpacity(0.1),
+                border: Border.all(color: Colors.blueGrey.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.policy_outlined, size: 12, color: Colors.blueGrey),
+                  SizedBox(width: 4),
+                  Text('Government Circular', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
                 ],
               ),
             ),
           ],
         ),
 
+        // Clickable Reference Cards Section
         if (hasSources) ...[
-          const SizedBox(height: 10),
-          const _SectionLabel(icon: Icons.description_outlined, label: 'Sources'),
-          const SizedBox(height: 4),
+          const SizedBox(height: 12),
+          const _SectionLabel(icon: Icons.bookmark_added_outlined, label: 'Clickable References & Sources'),
+          const SizedBox(height: 6),
           if (sources.isNotEmpty) CitationChips(sources: sources),
           if (pageCitations.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -175,28 +180,33 @@ class ExplainableAiPanel extends StatelessWidget {
           ],
         ],
 
+        // Administrative Decision Support Section
         if (administrativeRecommendations.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          const _SectionLabel(icon: Icons.admin_panel_settings_outlined, label: 'Administrative Decision Support'),
-          const SizedBox(height: 4),
+          const SizedBox(height: 12),
+          const _SectionLabel(icon: Icons.account_balance_outlined, label: 'AI-Assisted Administrative Recommendations'),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.04),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.primary.withOpacity(0.18)),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: administrativeRecommendations
                   .map((rec) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('• ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            const Icon(Icons.check_circle_outline, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 8),
                             Expanded(
-                              child: Text(rec, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+                              child: Text(
+                                rec,
+                                style: const TextStyle(fontSize: 12.5, height: 1.35, fontWeight: FontWeight.w500),
+                              ),
                             ),
                           ],
                         ),
@@ -206,31 +216,36 @@ class ExplainableAiPanel extends StatelessWidget {
           ),
         ],
 
+        // Relationship Timeline & Conflicts Section
         if (timeline.isNotEmpty || conflicts.isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           if (timeline.isNotEmpty)
-            const _SectionLabel(icon: Icons.history_outlined, label: 'Timeline'),
+            const _SectionLabel(icon: Icons.timeline_outlined, label: 'Circular Relationship Timeline'),
           if (conflicts.isNotEmpty) ...[
             if (timeline.isNotEmpty) const SizedBox(height: 6),
-            _SectionLabel(icon: Icons.warning_amber_rounded, label: 'Conflicts', color: AppColors.danger),
+            _SectionLabel(icon: Icons.warning_amber_rounded, label: 'Flagged Document Conflicts', color: AppColors.danger),
           ],
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           RelationshipTimelineCard(timeline: timeline, conflicts: conflicts),
         ],
+
+        // Reasoning Trace
         if (reasoning != null && reasoning!.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           const Divider(height: 1),
           const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lightbulb_outline, size: 13, color: AppColors.textFaint),
-              const SizedBox(width: 5),
+              const Icon(Icons.auto_awesome, size: 14, color: AppColors.accent),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   reasoning!,
                   style: const TextStyle(
-                    fontSize: 11.5, color: AppColors.textFaint, fontStyle: FontStyle.italic,
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
@@ -242,7 +257,6 @@ class ExplainableAiPanel extends StatelessWidget {
   }
 }
 
-
 class _SectionLabel extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -251,44 +265,17 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppColors.textSecondary;
+    final c = color ?? AppColors.primary;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: c),
-        const SizedBox(width: 5),
+        Icon(icon, size: 14, color: c),
+        const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: c, letterSpacing: 0.2),
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: c, letterSpacing: 0.1),
         ),
       ],
-    );
-  }
-}
-
-class _QuickStat extends StatelessWidget {
-  final IconData icon;
-  final int count;
-  final Color? color;
-  const _QuickStat({required this.icon, required this.count, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = color ?? AppColors.textSecondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: c.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: c),
-          const SizedBox(width: 3),
-          Text('$count', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: c)),
-        ],
-      ),
     );
   }
 }

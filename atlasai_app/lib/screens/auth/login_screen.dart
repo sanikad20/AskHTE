@@ -1,12 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../theme/app_theme.dart';
 import 'signup_screen.dart';
 
-/// Day 4: real login. On success, does nothing itself — main.dart's
-/// AuthGate listens to authStateChanges and routes to HomeShell once
-/// Firebase Auth reports a signed-in user, so this screen just needs
-/// to trigger sign-in and surface errors.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -43,8 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      // No navigation here — AuthGate in main.dart reacts to
-      // authStateChanges and routes to HomeShell automatically.
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = switch (e.code) {
@@ -64,69 +59,123 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('AskHTE — Sign In')),
-      // SingleChildScrollView: lets the form scroll up when the
-      // on-screen keyboard shrinks the viewport, instead of the
-      // Column below overflowing past the bottom edge.
-      body: SingleChildScrollView(
+      body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Icon(Icons.school_outlined, size: 56, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 12),
-                    Text(
-                      'AskHTE',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                elevation: isDark ? 0 : 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  side: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Government Emblem Badge & Title
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.account_balance, size: 40, color: AppColors.primary),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'AskHTE Portal',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Higher & Technical Education Department',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12.5, color: AppColors.textFaint),
+                        ),
+                        const SizedBox(height: 24),
+
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Official Email',
+                            prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
+                          ),
+                          validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock_outline, color: AppColors.primary),
+                          ),
+                          validator: (v) => (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
+                        ),
+
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.dangerBg,
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline, size: 16, color: AppColors.danger),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(_errorMessage!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 22),
+                        ElevatedButton(
+                          onPressed: _loading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                          ),
+                          child: _loading
+                              ? const SizedBox(
+                                  width: 20, height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('Sign In to AskHTE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 14),
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const SignupScreen()),
+                                  ),
+                          child: const Text("Don't have an account? Sign up"),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                      validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
-                      validator: (v) => (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                    ],
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _loading ? null : _submit,
-                      child: _loading
-                          ? const SizedBox(
-                              width: 20, height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Sign In'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: _loading
-                          ? null
-                          : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const SignupScreen()),
-                              ),
-                      child: const Text("Don't have an account? Sign up"),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

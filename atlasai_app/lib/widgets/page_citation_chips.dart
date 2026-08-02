@@ -1,25 +1,6 @@
 import 'package:flutter/material.dart';
-
 import '../theme/app_theme.dart';
 
-/// New widget. Renders "GR-2026/23 · p.14"-style chips from the
-/// structured page citations retrieval.py now returns (see
-/// AgentResult.citations / PageCitation in schemas.py).
-///
-/// Renamed from the original "CitationChips" name in the delivery
-/// pass to PageCitationChips: this codebase already had a
-/// CitationChips widget (widgets/citation_chips.dart, sources:
-/// List<String>) wired into ExplainableAiPanel — same feature area,
-/// different shape (plain source strings vs. page-numbered chips), so
-/// keeping both names distinct avoids a class collision instead of
-/// silently shadowing one.
-///
-/// Takes an `onOpenPage` callback rather than hardcoding a PDF viewer
-/// package, since none is in this project's pubspec.yaml yet. A
-/// common choice is `syncfusion_flutter_pdfviewer` or
-/// `flutter_pdfview`'s `gotoPage()`/`onPageChanged` API — until one is
-/// wired in, ExplainableAiPanel's default `onOpenPage` just shows the
-/// citation in a bottom sheet (see explainable_ai_panel.dart).
 class PageCitation {
   final String fileName;
   final int? page;
@@ -45,21 +26,36 @@ class PageCitationChips extends StatelessWidget {
   Widget build(BuildContext context) {
     if (citations.isEmpty) return const SizedBox.shrink();
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: citations
-          .map(
-            (c) => ActionChip(
-              avatar: const Icon(Icons.description_outlined, size: 14, color: AppColors.primary),
-              label: Text(
-                c.page != null ? '${c.fileName} · p.${c.page}' : c.fileName,
-                style: const TextStyle(fontSize: 12),
-              ),
-              backgroundColor: AppColors.primary.withOpacity(0.08),
-              onPressed: () => onOpenPage(c),
+      spacing: 8,
+      runSpacing: 8,
+      children: citations.map((c) {
+        final labelText = c.page != null ? '${c.fileName} · Page ${c.page}' : c.fileName;
+        return InkWell(
+          onTap: () => onOpenPage(c),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
             ),
-          )
-          .toList(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.picture_as_pdf_outlined, size: 14, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  labelText.length > 35 ? '${labelText.substring(0, 35)}…' : labelText,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.open_in_new, size: 12, color: AppColors.primary),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
