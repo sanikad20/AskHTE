@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.orchestrator import orchestrator
@@ -15,7 +16,12 @@ from app.models.schemas import (
     CaptureSubmitResponse,
     ActionGenerateRequest,
     ActionGenerateResponse,
+    DocumentSummaryRequest,
+    DocumentSummaryResponse,
+    DocumentCompareResponse,
+    DocumentCompareRow,
 )
+
 from app.services import ingestion
 from app.services import embeddings
 from app.services import entity_extraction
